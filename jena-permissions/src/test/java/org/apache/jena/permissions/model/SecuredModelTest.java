@@ -18,14 +18,19 @@
 package org.apache.jena.permissions.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
+import org.apache.jena.atlas.iterator.ActionCount;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.NodeFactory;
@@ -36,6 +41,8 @@ import org.apache.jena.permissions.graph.SecuredGraph;
 import org.apache.jena.permissions.graph.SecuredPrefixMappingTest;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.shared.AccessDeniedException;
+import org.apache.jena.shared.AddDeniedException;
+import org.apache.jena.shared.PrefixMapping;
 import org.apache.jena.shared.ReadDeniedException;
 import org.apache.jena.shared.UpdateDeniedException;
 import org.junit.Assert;
@@ -49,9 +56,11 @@ public class SecuredModelTest {
 	protected SecuredModel securedModel;
 	protected Model baseModel;
 	protected Resource s;
+	protected Resource s2;
 	protected Property p;
 	protected Property p2;
 	protected Resource o;
+	protected Resource o2;
 
 	public SecuredModelTest(final MockSecurityEvaluator securityEvaluator) {
 		this.securityEvaluator = securityEvaluator;
@@ -65,11 +74,22 @@ public class SecuredModelTest {
 	protected Model createModel() {
 		return ModelFactory.createDefaultModel();
 	}
+	
+	protected Model createSecondModel() {
+		Model secondModel = ModelFactory.createDefaultModel();
+		secondModel.add( s2, p2, o2);
+		return secondModel;
+	}
 
+	private boolean shouldRead() {
+		return !securityEvaluator.isHardReadError() || securityEvaluator.evaluate(Action.Read);
+	}
+	
 	@Before
 	public void setup() {
 		baseModel = createModel();
 		baseModel.removeAll();
+		baseModel.setNsPrefix("foo", "http://example.com/foo/");
 		securedModel = Factory.getInstance(securityEvaluator, "http://example.com/securedGraph", baseModel);
 		s = ResourceFactory.createResource("http://example.com/graph/s");
 		p = ResourceFactory.createProperty("http://example.com/graph/p");
@@ -79,7 +99,8 @@ public class SecuredModelTest {
 		baseModel.add(s, p2, "yeehaw");
 		baseModel.add(s, p2, "yeehaw yall", "us");
 		baseModel.add(s, p2, "whohoo", "uk");
-
+		s2 = ResourceFactory.createResource("http://example.com/graph/s2");
+		o2 = ResourceFactory.createResource("http://example.com/graph/o2");
 	}
 
 	@Test
@@ -240,88 +261,127 @@ public class SecuredModelTest {
 		}
 	}
 
+	private void __testContains_true( Supplier<Boolean> supplier ) {
+		try {
+			boolean result = supplier.get();
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertTrue( result );
+			} else {
+				Assert.assertFalse( result );
+			}
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+	}
+	
+	private void __testContains_false( Supplier<Boolean> supplier ) {
+		try {
+			boolean result = supplier.get();
+			Assert.assertFalse( result );
+			
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+	}
 	@Test
 	public void testContains() throws Exception {
 		final Statement stmt = baseModel.listStatements().next();
-		try {
-			securedModel.contains(stmt);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		try {
-			securedModel.contains(s, p);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.contains(s, p, o);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.contains(s, p, "foo");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.contains(s, p, "foo", "en");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
+		/*
+		 * baseModel.add(s, p2, "yeehaw");
+		baseModel.add(s, p2, "yeehaw yall", "us");
+		baseModel.add(s, p2, "whohoo", "uk");
+		 */
+		__testContains_true( ()->securedModel.contains(stmt) );
+		__testContains_true( ()->securedModel.contains(s, p) );
+		__testContains_true( ()->securedModel.contains(s, p, o) );
+		__testContains_true( ()->securedModel.contains(s, p2, "yeehaw") );
+		__testContains_true( ()->securedModel.contains(s, p2, "whohoo", "uk") );
+		
+		 final Statement stmt2 = createSecondModel().listStatements().next();
+		__testContains_false( ()->securedModel.contains(stmt2) );
+		__testContains_false( ()->securedModel.contains(s2, p) );
+		__testContains_false( ()->securedModel.contains(s, p, o2) );
+		__testContains_false( ()->securedModel.contains(s, p2, "foo") );
+		__testContains_false( ()->securedModel.contains(s, p, "whohoo", "fr") );
 	}
 
 	@Test
-	public void testContainsAll() throws Exception {
+	public void testContainsAll_Model() throws Exception {
 		try {
-			securedModel.containsAll(baseModel);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			boolean result = securedModel.containsAll(baseModel);
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertTrue( result );
+			} else {
+				Assert.assertFalse( result );
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
 		}
+		
 		try {
-			securedModel.containsAll(baseModel.listStatements());
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Model secondModel = createSecondModel();
+			secondModel.add( s, p, o);
+			boolean result = securedModel.containsAll(secondModel);
+			Assert.assertFalse( result );
+			
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+	}
+	@Test
+	public void testContainsAll_Statements() throws Exception {
+		try {
+			boolean result =securedModel.containsAll(baseModel.listStatements());
 			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertTrue( result );
+			} else {
+				Assert.assertFalse( result );
+			}
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+		
+		try {
+			Model secondModel = createSecondModel();
+			secondModel.add( s, p, o);
+			boolean result =securedModel.containsAll(secondModel.listStatements());
+			Assert.assertFalse( result );
+			
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
@@ -560,12 +620,36 @@ public class SecuredModelTest {
 	@Test
 	public void testDifference() throws Exception {
 		try {
-			securedModel.difference(baseModel);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Model m = securedModel.difference(baseModel);
+			assertTrue( m.isEmpty() );
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+		
+		Model secondModel = createSecondModel();
+		try {
+			Model m = securedModel.difference(secondModel);
+			if ( securityEvaluator.evaluate(Action.Read))
+			{
+				assertEquals( 4, m.size() );
+				assertTrue( m.contains( s, p, o));
+				assertEquals( "yeehaw", m.getProperty( s, p2, "" ).getString() );
+				assertEquals( "yeehaw yall", m.getProperty( s, p2, "us" ).getString() );
+				assertEquals( "whohoo", m.getProperty( s, p2, "uk" ).getString() );
+			} else {
+				assertTrue( m.isEmpty() );
+			}
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
@@ -576,21 +660,6 @@ public class SecuredModelTest {
 	public void testEquals() throws Exception {
 		securedModel.equals(baseModel);
 		baseModel.equals(securedModel);
-	}
-
-	@Test
-	public void testExpandPrefix() throws Exception {
-		try {
-			securedModel.expandPrefix("foo");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
 	}
 
 	@Test
@@ -623,36 +692,61 @@ public class SecuredModelTest {
 	}
 
 	@Test
-	public void testGetAnyReifiedStmt() {
+	public void testGetAnyReifiedStmt_none() {
 		// first with create.
-		final Set<Action> UCR = SecurityEvaluator.Util
-				.asSet(new Action[] { Action.Update, Action.Create, Action.Read });
 		try {
-			securedModel.getAnyReifiedStatement(baseModel.listStatements().next());
-			if (!securityEvaluator.evaluate(UCR)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
+			ReifiedStatement r = securedModel.getAnyReifiedStatement(baseModel.listStatements().next());
+			Assert.assertNotNull( r ); 
+			if (!securityEvaluator.evaluate(Action.Update)) {
+				Assert.fail("Should have thrown UpdateDeniedException Exception");
 			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(UCR)) {
-				e.printStackTrace();
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
+			if (!securityEvaluator.evaluate(Action.Create)) {
+				Assert.fail("Should have thrown AddDeniedException Exception");
+			}
+		} catch (final UpdateDeniedException e) {
+			if (securityEvaluator.evaluate(Action.Update)) {
+				Assert.fail(String.format("Should not have thrown UpdateDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
+		} catch (final AddDeniedException e) {
+			if (securityEvaluator.evaluate(Action.Create)) {
+				Assert.fail(String.format("Should not have thrown AddDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}	
 		}
-
+	}
+	
+	@Test
+	public void testGetAnyReifiedStmt_one() {
 		final Statement st = baseModel.listStatements().next();
-		baseModel.createReifiedStatement(st);
-		// now it is there so try with read
+		ReifiedStatement s = baseModel.createReifiedStatement(st);
+		// there is a reified statement so only read is required.
+		
 		try {
-			securedModel.getAnyReifiedStatement(st);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
+			ReifiedStatement r = securedModel.getAnyReifiedStatement(st);
+			if (securityEvaluator.evaluate(Action.Read))
+			{
+				Assert.assertEquals( s.getURI(), r.getURI() );
 			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+			if (!securityEvaluator.evaluate(Action.Update) && 
+					!securityEvaluator.evaluate(Action.Read)) {
+				Assert.fail("Should have thrown UpdateDeniedException Exception");
+			}
+			if (!securityEvaluator.evaluate(Action.Create) && 
+					!securityEvaluator.evaluate(Action.Read)) {
+				Assert.fail("Should have thrown AddDeniedException Exception");
+			}
+		} catch (final UpdateDeniedException e) {
+			if (securityEvaluator.evaluate( Action.Update )) {
+				Assert.fail(String.format("Should not have thrown UpdateDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
+		} catch (final AddDeniedException e) {
+			if (securityEvaluator.evaluate(Action.Create)) {
+				Assert.fail(String.format("Should not have thrown AddDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+			
 		}
 	}
 
@@ -696,38 +790,109 @@ public class SecuredModelTest {
 		securedModel.getLock();
 	}
 
-	@Test
-	public void testGetProperty() {
+	private void __testGetProperty_exists(Supplier<Property> supplier) {
+		try {
+			Property prop = supplier.get();
+			assertEquals( p.getURI(), prop.getURI() );
+			if (!securityEvaluator.evaluate(Action.Read)) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+	}
+	
+	private void __testGetProperty_notExists(Supplier<Property> supplier) {
+		try {
+			Property actual = supplier.get();
+			Assert.assertEquals( "http://example.com/graph/p3", actual.getURI() );
+			if (!securityEvaluator.evaluate(Action.Read)) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+	}
 
+	@Test
+	public void testGetProperty_String() {
+		__testGetProperty_exists( ()->securedModel.getProperty( "http://example.com/graph/p" ) );
+	}
+
+	@Test
+	public void testGetProperty_String_String() {
+		__testGetProperty_exists( ()->securedModel.getProperty( "http://example.com/graph/","p" ) );
+	}
+
+	@Test
+	public void testGetProperty_String_notExist() {
+		__testGetProperty_notExists( ()->securedModel.getProperty( "http://example.com/graph/p3" ) );
+	}
+
+	@Test
+	public void testGetProperty_String_String_notExist() {
+		__testGetProperty_notExists( ()->securedModel.getProperty( "http://example.com/graph/","p3" ) );
+	}
+
+	@Test
+	public void testGetProperty_SP_exists() {
+		Statement expected = baseModel.getProperty(s, p);
 		try {
-			securedModel.getProperty("foo");
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Statement actual = securedModel.getProperty( s, p );
+			if (securityEvaluator.evaluate(Action.Read)) {
+				assertEquals( expected, actual );
+			} else {
+				Assert.assertNull( actual );
+			}
+			
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
 		}
+	}
+	
+	@Test
+	public void testGetProperty_SP_notExists() {
 		try {
-			securedModel.getProperty(s, p);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Statement actual = securedModel.getProperty( s2, p );
+			Assert.assertNull( actual );
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
 		}
+	}
+
+	private void __testGetProperty_lang(Supplier<Statement> supplier, String expected) {
 		try {
-			securedModel.getProperty("fooNS", "foo");
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Statement stmt = supplier.get();
+			if (securityEvaluator.evaluate(Action.Read) && expected != null)
+			{
+				assertNotNull(stmt);
+				assertEquals(expected, stmt.getObject().asLiteral().getString());
+			} else {
+				assertNull(stmt);
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
@@ -736,63 +901,40 @@ public class SecuredModelTest {
 
 	@Test
 	public void testGetPropertyWithLang() {
-
-		try {
-			SecuredStatement stmt = securedModel.getProperty(s, p2, "");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-			assertNotNull(stmt);
-			assertEquals("yeehaw", stmt.getObject().asLiteral().getString());
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			SecuredStatement stmt = securedModel.getProperty(s, p2, "us");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-			assertNotNull(stmt);
-			assertEquals("yeehaw yall", stmt.getObject().asLiteral().getString());
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		try {
-			SecuredStatement stmt = securedModel.getProperty(s, p2, "uk");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-			assertNotNull(stmt);
-			assertEquals("whohoo", stmt.getObject().asLiteral().getString());
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
+		__testGetProperty_lang(()->securedModel.getProperty(s, p2, ""), "yeehaw");
+		__testGetProperty_lang(()->securedModel.getProperty(s, p2, "us"),"yeehaw yall");
+		__testGetProperty_lang(()->securedModel.getProperty(s, p2, "uk"),"whohoo");
+		__testGetProperty_lang(()->securedModel.getProperty(s, p2, "fr"),null);
+		__testGetProperty_lang(()->securedModel.getProperty(s, p, ""), null);
+		__testGetProperty_lang(()->securedModel.getProperty(s, p, "us"),null);
+		__testGetProperty_lang(()->securedModel.getProperty(s, p, "uk"),null);
 	}
-
+	
 	@Test
-	public void testGetQNameFor() throws Exception {
-		try {
-			securedModel.qnameFor("foo");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
+	public void testGetPrefixMapping() throws Exception {
+		SecuredPrefixMappingTest.runTests(securityEvaluator,
+				new Supplier<PrefixMapping>() { 
+					public PrefixMapping get() {
+						setup();
+						return securedModel;
+					}},
+				baseModel.getNsPrefixMap());
 	}
+
+//	@Test
+//	public void testGetQNameFor() throws Exception {
+//		try {
+//			securedModel.qnameFor("foo");
+//			if (!securityEvaluator.evaluate(Action.Read)) {
+//				Assert.fail("Should have thrown ReadDeniedException Exception");
+//			}
+//		} catch (final ReadDeniedException e) {
+//			if (securityEvaluator.evaluate(Action.Read)) {
+//				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+//						e.getTriple()));
+//			}
+//		}
+//	}
 
 	@Test
 	public void testGetRDFNode() {
@@ -862,17 +1004,57 @@ public class SecuredModelTest {
 	@Test
 	public void testIntersection() throws Exception {
 		try {
-			securedModel.intersection(baseModel);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Model m = securedModel.intersection(baseModel);
+			if (securityEvaluator.evaluate(Action.Read))
+			{
+				assertTrue( m.isIsomorphicWith( baseModel ));
+			} else {
+				assertTrue( m.isEmpty());
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
 		}
-	}
+		
+		Model secondModel = createSecondModel();
+		try {
+			Model m = securedModel.intersection(secondModel);
+			assertTrue( m.isEmpty());
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+
+		secondModel.add( s, p, o );
+		try {
+			Model m = securedModel.intersection(secondModel);
+			if (securityEvaluator.evaluate(Action.Read))
+			{
+				assertTrue( m.contains( s, p ,o ));
+				assertEquals( 1, m.size() );
+			} else {
+				assertTrue( m.isEmpty());
+			}
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+}
 
 	@Test
 	public void testIsClosed() throws Exception {
@@ -882,39 +1064,70 @@ public class SecuredModelTest {
 	@Test
 	public void testIsEmpty() throws Exception {
 		try {
-			securedModel.isEmpty();
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			boolean actual = securedModel.isEmpty();
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertFalse( actual );
+			} else {
+				Assert.assertTrue( actual );
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
 		}
+		
+		baseModel.removeAll();
+		try {
+			boolean actual = securedModel.isEmpty();
+			Assert.assertTrue( actual );
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+
 	}
 
 	@Test
 	public void testIsIsomorphicWith() {
 		try {
-			securedModel.isIsomorphicWith(baseModel);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			boolean result = securedModel.isIsomorphicWith(baseModel);
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertTrue( result );
+			} else {
+				Assert.assertFalse( result );
+			}
+			
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
 		}
 
 		try {
-			baseModel.isIsomorphicWith(securedModel);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			boolean result = baseModel.isIsomorphicWith(securedModel);
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertTrue( result );
+			} else {
+				Assert.assertFalse( result );
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
@@ -923,77 +1136,74 @@ public class SecuredModelTest {
 
 	@Test
 	public void testIsReified() {
+		Statement stmt = baseModel.listStatements().next();
 		try {
-			securedModel.isReified(baseModel.listStatements().next());
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			boolean actual = securedModel.isReified(stmt);
+			assertFalse( actual );
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+		
+		baseModel.createReifiedStatement(stmt);
+		try {
+			boolean actual = securedModel.isReified(stmt);
 			if (securityEvaluator.evaluate(Action.Read)) {
+				assertTrue( actual );
+			} else {
+				assertFalse( actual );
+			}
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
 		}
 
 	}
+	
+	private void __testListLiteralStatements( Supplier<StmtIterator> supplier) {
+		try {
+			StmtIterator iter = supplier.get();
+			assertNotNull( iter );
+			if (securityEvaluator.evaluate(Action.Read)) {
+				assertTrue( iter.hasNext() );
+			} else {
+				assertFalse( iter.hasNext() );
+			}
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+	}
 
 	@Test
 	public void testListLiteralStatements() throws Exception {
-		try {
-			securedModel.listLiteralStatements(s, p, true);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.listLiteralStatements(s, p, '0');
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.listLiteralStatements(s, p, 2.0d);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.listLiteralStatements(s, p, 2.0f);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.listLiteralStatements(s, p, 1);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
+		
+		baseModel.addLiteral(s, p, true );
+		baseModel.addLiteral(s, p, '0');
+		baseModel.addLiteral(s, p, 2d);
+		baseModel.addLiteral(s, p, 2f);
+		baseModel.addLiteral(s, p, 1);
+		
+		__testListLiteralStatements( ()->securedModel.listLiteralStatements(s, p, true) );
+		__testListLiteralStatements( ()->securedModel.listLiteralStatements(s, p, '0') );
+		__testListLiteralStatements( ()->securedModel.listLiteralStatements(s, p, 2.0d) );
+		__testListLiteralStatements( ()->securedModel.listLiteralStatements(s, p, 2.0f) );
+		__testListLiteralStatements( ()->securedModel.listLiteralStatements(s, p, 1) );
 	}
 
 	@Test
@@ -1013,19 +1223,32 @@ public class SecuredModelTest {
 
 	@Test
 	public void testPrefixMapping() throws Exception {
-		SecuredPrefixMappingTest.runTests(securityEvaluator, securedModel);
+		SecuredPrefixMappingTest.runTests(securityEvaluator, 
+			new Supplier<PrefixMapping>() { 
+				public PrefixMapping get() {
+					setup();
+					return securedModel;
+				}},
+			baseModel.getNsPrefixMap());
 	}
 
 	@Test
 	public void testQuery() throws Exception {
 		final Selector s = new SimpleSelector();
 		try {
-			securedModel.query(s);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Model model = securedModel.query(s);
+			if (securityEvaluator.evaluate(Action.Read))
+			{
+				Assert.assertTrue( model.isIsomorphicWith(baseModel));
+			} else {
+				Assert.assertTrue( model.isEmpty() );
+			}
+			
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
@@ -1365,12 +1588,17 @@ public class SecuredModelTest {
 	@Test
 	public void testSize() throws Exception {
 		try {
-			securedModel.size();
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			long size = securedModel.size();
+			if ( securityEvaluator.evaluate(Action.Read) ) {
+				Assert.assertEquals( 4, size );
+			} else {
+				Assert.assertEquals( 0, size );
+			}
+			if (! shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
@@ -1378,30 +1606,45 @@ public class SecuredModelTest {
 	}
 
 	@Test
-	public void testUnion() throws Exception {
+	public void testUnion_onLeft() throws Exception {
+		Model secondModel = createSecondModel();
 		try {
-			securedModel.union(baseModel);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Model uModel = securedModel.union(secondModel);
+			assertTrue( uModel.contains( s2, p2, o2 ));
+			if (securityEvaluator.evaluate(Action.Read))
+			{
+				assertTrue( uModel.contains( s, p, o ));
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
 		}
-
+	}
+	
+	@Test
+	public void testUnion_onRight() throws Exception {
+		Model secondModel = createSecondModel();
 		try {
-			baseModel.union(securedModel);
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Model uModel = secondModel.union(securedModel);
+			assertTrue( uModel.contains( s2, p2, o2 ));
+			if (securityEvaluator.evaluate(Action.Read))
+			{
+				assertTrue( uModel.contains( s, p, o ));
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
-		}
+		}	
 	}
 
 	@Test
@@ -1428,77 +1671,51 @@ public class SecuredModelTest {
 		securedModel.wrapAsResource(NodeFactory.createURI("http://example.com/rdfNode"));
 	}
 
+	/**
+	 * this is a cheat.  The supplier executes one of the model write methods
+	 * and we just check that the outcome (exceptions and all) are as expected.
+	 */
+	private void __testWrite( Supplier<SecuredModel> supplier ) {
+		try {
+			supplier.get();
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
+			}
+		} catch (final ReadDeniedException e) {
+			if (shouldRead()) {
+				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+	}
+	
 	@Test
-	public void testWrite() throws Exception {
-		final OutputStream out = new ByteArrayOutputStream();
-		final Writer writer = new CharArrayWriter();
-		final String lang = "TURTLE";
-		try {
-			securedModel.write(out);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.write(writer);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.write(out, lang);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.write(writer, lang);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.write(out, lang, "http://example.com/securedGraph");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.write(writer, lang, "http://example.com/securedGraph");
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
+	public void testWrite_stream() throws Exception {
+		__testWrite( ()->securedModel.write(new ByteArrayOutputStream()) );
+	}
+	
+	@Test
+	public void testWrite_stream_lang() throws Exception {
+		__testWrite( ()->securedModel.write(new ByteArrayOutputStream(), "TURTLE") );
+	}
 
+	@Test
+	public void testWrite_stream_lang_base() throws Exception {
+		__testWrite( ()->securedModel.write(new ByteArrayOutputStream(), "TURTLE", "http://example.com/securedGraph") );
+	}
+
+	@Test
+	public void testWrite_writer() throws Exception {
+		__testWrite( ()->securedModel.write(new CharArrayWriter()) );
+	}
+
+	@Test
+	public void testWrite_writer_lang() throws Exception {
+		__testWrite( ()->securedModel.write(new CharArrayWriter(), "TURTLE") );
+	}
+	
+	@Test
+	public void testWrite_writer_lang_base() throws Exception {
+		__testWrite( ()->securedModel.write(new CharArrayWriter(), "TURTLE", "http://example.com/securedGraph") );
 	}
 }
