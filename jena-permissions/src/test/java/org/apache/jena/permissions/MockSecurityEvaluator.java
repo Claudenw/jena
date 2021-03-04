@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.permissions.SecurityEvaluator.Action;
 import org.apache.jena.rdf.model.Resource ;
 
 public class MockSecurityEvaluator implements SecurityEvaluator
@@ -34,16 +35,17 @@ public class MockSecurityEvaluator implements SecurityEvaluator
 	private final boolean update;
 	private final boolean delete;
 	private final boolean forceTripleChecks;
+	private final boolean hardReadError;
 	
 	public static MockSecurityEvaluator getInstance()
 	{
-		return new MockSecurityEvaluator( true, true, true, true, true, true );
+		return new MockSecurityEvaluator( true, true, true, true, true, true, true );
 	}
 
 
 	public MockSecurityEvaluator( final boolean loggedIn, final boolean create,
 			final boolean read, final boolean update, final boolean delete,
-			final boolean forceTripleChecks )
+			final boolean forceTripleChecks, boolean hardReadError )
 	{
 		this.loggedIn = loggedIn;
 		this.create = create;
@@ -51,6 +53,7 @@ public class MockSecurityEvaluator implements SecurityEvaluator
 		this.update = update;
 		this.delete = delete;
 		this.forceTripleChecks = forceTripleChecks;
+		this.hardReadError = hardReadError;
 	}
 
 	public boolean evaluate( final Action action )
@@ -214,6 +217,12 @@ public class MockSecurityEvaluator implements SecurityEvaluator
 		return null;
 	}
 
+	@Override
+	public boolean isHardReadError() {
+		return hardReadError;
+	}
+
+
 	public boolean isLoggedIn()
 	{
 		return loggedIn;
@@ -222,8 +231,8 @@ public class MockSecurityEvaluator implements SecurityEvaluator
 	@Override
 	public String toString()
 	{
-		return String.format("C:%s R:%s U:%s D:%s force:%s", create, read,
-				update, delete, forceTripleChecks);
+		return String.format("C:%s R:%s U:%s D:%s force:%s hardRead:%s", create, read,
+				update, delete, forceTripleChecks, hardReadError);
 	}
 
 

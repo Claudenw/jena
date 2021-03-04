@@ -112,7 +112,7 @@ public class QueryEngineTest {
 	@Test
 	public void testOpenQueryType() {
 		final SecurityEvaluator eval = new MockSecurityEvaluator(true, true,
-				true, true, true, true);
+				true, true, true, true, true);
 		final SecuredModel model = Factory.getInstance(eval,
 				"http://example.com/securedModel", baseModel);
 		try {
@@ -138,7 +138,7 @@ public class QueryEngineTest {
 	@Test
 	public void testRestrictedQueryType() {
 		final SecurityEvaluator eval = new MockSecurityEvaluator(true, true,
-				true, true, true, true) {
+				true, true, true, true, true) {
 
 			@Override
 			public boolean evaluate(final Object principal,
@@ -176,7 +176,7 @@ public class QueryEngineTest {
 	@Test
 	public void testSelectAllType() {
 		final SecurityEvaluator eval = new MockSecurityEvaluator(true, true,
-				true, true, true, true) {
+				true, true, true, true, true) {
 
 			@Override
 			public boolean evaluate(Object principal, final Action action,

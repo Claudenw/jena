@@ -283,12 +283,31 @@ public abstract class SecuredItemImpl implements SecuredItem {
 		this.itemHolder = holder;
 	}
 
+	/**
+	 * Return a string representation of the resource.
+	 * 
+	 * Returns the URI of the resource unless the resource is anonymous in which
+	 * case it returns the id of the resource enclosed in square brackets.
+	 * 
+	 * If the user can not read the graph the toString() returns the hashcode in hex
+	 * 
+	 * @return Return a string representation of the resource. 
+	 */
 	@Override
-	public String toString() throws AuthenticationRequiredException {
-		if (canRead()) {
-			return itemHolder.getBaseItem().toString();
+	public final String toString() throws AuthenticationRequiredException {
+		Object o = itemHolder.getBaseItem();
+		boolean ok = canRead();
+		if (ok) {
+			if ( o instanceof Triple )
+			{
+				ok = canRead( (Triple) o );
+			} else if ( o instanceof FrontsTriple )
+			{
+				ok = canRead( ((FrontsTriple) o).asTriple());
+			}
 		}
-		return super.toString();
+		return (ok)? itemHolder.getBaseItem().toString() :
+			String.format( "SecuredItem[0x%X]", itemHolder.getBaseItem().hashCode());
 	}
 
 	/**
@@ -669,18 +688,37 @@ public abstract class SecuredItemImpl implements SecuredItem {
 	}
 
 	/**
-	 * check that read on the securedModel is allowed,
-	 * 
+	 * Checks that read on the securedModel/securedGraph is allowed.
+	 * <ul>
+	 * <li>
+	 * If the securedModel/securedGraph can not be read and the 
+	 * {@code SecurityEvaluator.isHardReadError()} returns true, throws an 
+	 * exception.
+	 * </li><li>
+	 * If the securedModel/securedGraph can not be read and the 
+	 * {@code SecurityEvaluator.isHardReadError()} returns false, returns false. 
+	 * </li><li>
+	 * Otherwise returns true.
+	 * </li>
+	 * </ul>
+	 * @return true if the model/graph can be read.
 	 * @throws ReadDeniedException
 	 *             on failure
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
 	 */
-	protected void checkRead() throws ReadDeniedException,
+	protected boolean checkRead() throws ReadDeniedException,
 			AuthenticationRequiredException {
 		if (!canRead()) {
-			throw new ReadDeniedException(
+			if (securityEvaluator.isHardReadError())
+			{
+				throw new ReadDeniedException(
 					SecuredItem.Util.modelPermissionMsg(modelNode));
+			}
+			return false;
+		}
+		else {
+			return true;
 		}
 	}
 
@@ -689,32 +727,39 @@ public abstract class SecuredItemImpl implements SecuredItem {
 	 * 
 	 * @param triple
 	 *            The triple to check.
+	 * @returns True if the triple can be read, false if not.
 	 * @throws ReadDeniedException
-	 *             on failure
+	 *             on failure if HardReadErrors is true.
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
 	 */
-	protected void checkRead(final Triple triple) throws ReadDeniedException,
+	protected boolean checkRead(final Triple triple) throws ReadDeniedException,
 			AuthenticationRequiredException {
 		if (!canRead(triple)) {
-			throw new ReadDeniedException(
+			if (securityEvaluator.isHardReadError())
+			{
+				throw new ReadDeniedException(
 					SecuredItem.Util.triplePermissionMsg(modelNode), triple);
+			}
+			return false;
 		}
+		return true;
 	}
 
 	/**
 	 * check that the triple can be read in the securedModel.,
 	 * 
+	 * @returns True if the triple can be read, false if not.
 	 * @param frontsTriple
 	 *            The object fronting the triple to check.
 	 * @throws ReadDeniedException
-	 *             on failure
+	 *             on failure if HardReadErrors are enabled.
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
 	 */
-	protected void checkRead(final FrontsTriple frontsTriple)
+	protected boolean checkRead(final FrontsTriple frontsTriple)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		checkRead(frontsTriple.asTriple());
+		return checkRead(frontsTriple.asTriple());
 	}
 
 	/**
@@ -722,18 +767,22 @@ public abstract class SecuredItemImpl implements SecuredItem {
 	 * 
 	 * @param frontsTripleIter
 	 *            The iterator of fronts triple objects to check.
+	 * @param returns true if all triples can be read, false if not.           
 	 * @throws ReadDeniedException
-	 *             on failure
+	 *             on failure if HardReadErrors are enabled.
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
 	 */
-	protected void checkReadFrontsTriples(
+	protected boolean checkReadFrontsTriples(
 			final ExtendedIterator<FrontsTriple> frontsTripleIter)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		try {
 			while (frontsTripleIter.hasNext()) {
-				checkRead(frontsTripleIter.next());
+				if (!checkRead(frontsTripleIter.next())) {
+					return false;
+				}
 			}
+			return true;
 		} finally {
 			frontsTripleIter.close();
 		}
@@ -744,17 +793,22 @@ public abstract class SecuredItemImpl implements SecuredItem {
 	 * 
 	 * @param triples
 	 *            The iterator of triples to check.
+	 * @returns true if all the triples can be read, false if not.
 	 * @throws ReadDeniedException
-	 *             on failure
+	 *             on failure if HardReadErrors is enabled.
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
 	 */
-	protected void checkReadTriples(final ExtendedIterator<Triple> triples)
+	protected boolean checkReadTriples(final ExtendedIterator<Triple> triples)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		try {
 			while (triples.hasNext()) {
-				checkRead(triples.next());
+				if (!checkRead(triples.next()))
+				{
+					return false;
+				}
 			}
+			return true;
 		} finally {
 			triples.close();
 		}

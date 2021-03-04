@@ -32,13 +32,13 @@ public class SecuredGraphContractTests extends MetaTestGraph
 			final String name )
 	{
 		super(graphClass, name);
-		eval = new MockSecurityEvaluator(true, true, true, true, true, true);
+		eval = new MockSecurityEvaluator(true, true, true, true, true, true, true);
 	}
 
 	public SecuredGraphContractTests( final String name )
 	{
 		super(name);
-		eval = new MockSecurityEvaluator(true, true, true, true, true, true);
+		eval = new MockSecurityEvaluator(true, true, true, true, true, true, true);
 	}
 
 	@Override

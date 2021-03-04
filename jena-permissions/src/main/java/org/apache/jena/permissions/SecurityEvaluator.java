@@ -417,4 +417,18 @@ public interface SecurityEvaluator {
 	 * @return true if authenticated, false if not.
 	 */
 	public boolean isPrincipalAuthenticated(Object principal);
+	
+	/**
+	 * Returns true if reads blocked by permissions should throw exceptions.
+	 * If set false then:
+	 * <ul>
+	 * <li>For iterators return empty iterators.</li>
+	 * <li>For existential checks return false.</li>
+	 * <li>For counts return 0.</li>
+	 * </ul>
+	 * @return true if reads blocked by permissions should throw an exception. 
+	 */
+	public default boolean isHardReadError() {
+		return true;
+	}
 }

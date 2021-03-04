@@ -68,7 +68,7 @@ public class DataSetTest {
 
 	@Test
 	public void testOpenQueryType() {
-		eval = new MockSecurityEvaluator(true, true, true, true, true, true);
+		eval = new MockSecurityEvaluator(true, true, true, true, true, true, true);
 
 		setup();
 
@@ -91,7 +91,7 @@ public class DataSetTest {
 
 	@Test
 	public void testRestrictedQueryType() {
-		eval = new MockSecurityEvaluator(true, true, true, true, true, true) {
+		eval = new MockSecurityEvaluator(true, true, true, true, true, true, true) {
 
 			@Override
 			public boolean evaluate(final Object principal, final Action action, final Node graphIRI,
@@ -135,7 +135,7 @@ public class DataSetTest {
 
 	@Test
 	public void testSelectAllType() {
-		eval = new MockSecurityEvaluator(true, true, true, true, true, true) {
+		eval = new MockSecurityEvaluator(true, true, true, true, true, true, true) {
 
 			@Override
 			public boolean evaluate(final Object principal, final Action action, final Node graphIRI,

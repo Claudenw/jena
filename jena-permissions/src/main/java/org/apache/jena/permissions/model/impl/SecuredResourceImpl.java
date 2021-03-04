@@ -910,20 +910,6 @@ public class SecuredResourceImpl extends SecuredRDFNodeImpl implements SecuredRe
 		return holder.getSecuredItem();
 	}
 
-	/**
-	 * Return a string representation of the resource.
-	 * 
-	 * Returns the URI of the resource unless the resource is anonymous in which
-	 * case it returns the id of the resource enclosed in square brackets.
-	 * 
-	 * @return Return a string representation of the resource. if it is
-	 *         anonymous.
-	 */
-	@Override
-	public String toString() {
-		return holder.getBaseItem().toString();
-	}
-
 	@Override
 	public Object visitWith(final RDFVisitor rv) {
 		return isAnon() ? rv.visitBlank(this, getId()) : rv.visitURI(this, getURI());

@@ -60,7 +60,7 @@ public class SecTestPackage extends AbstractTestPackage
 		
 		public PlainModelFactory()
 		{
-			eval = new MockSecurityEvaluator(true, true, true, true, true, true);
+			eval = new MockSecurityEvaluator(true, true, true, true, true, true, true);
 		}
 		
 		@Override
