@@ -17,7 +17,9 @@
  */
 package org.apache.jena.permissions.graph;
 
+import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.apache.jena.graph.*;
 import org.apache.jena.permissions.EqualityTester;
@@ -26,6 +28,7 @@ import org.apache.jena.permissions.SecurityEvaluator;
 import org.apache.jena.permissions.SecurityEvaluatorParameters;
 import org.apache.jena.permissions.SecurityEvaluator.Action;
 import org.apache.jena.shared.AccessDeniedException;
+import org.apache.jena.shared.PrefixMapping;
 import org.apache.jena.shared.ReadDeniedException;
 import org.apache.jena.sparql.graph.GraphFactory;
 import org.junit.Assert;
@@ -51,11 +54,21 @@ public class MemGraphTest {
 	protected Graph createGraph() throws Exception {
 		return GraphFactory.createDefaultGraph();
 	}
+	
+	private boolean shouldRead() {
+		return securityEvaluator.evaluate(Action.Read) || !securityEvaluator.isHardReadError();
+	}
+
 
 	@Before
-	public void setUp() throws Exception {
-		baseGraph = createGraph();
+	public void setUp()  {
+		try {
+			baseGraph = createGraph();
+		} catch (Exception e) {
+			throw new RuntimeException( "Setup error", e );
+		}
 		baseGraph.remove(Node.ANY, Node.ANY, Node.ANY);
+		baseGraph.getPrefixMapping().setNsPrefix("foo", "http://example.com/foo/");
 		securedGraph = org.apache.jena.permissions.Factory
 				.getInstance(securityEvaluator,
 						"http://example.com/securedGraph", baseGraph);
@@ -69,12 +82,18 @@ public class MemGraphTest {
 	@Test
 	public void testContainsNodes() throws Exception {
 		try {
-			Assert.assertTrue(securedGraph.contains(s, p, o));
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			boolean result = securedGraph.contains(s, p, o);
+			if (securityEvaluator.evaluate(Action.Read))
+			{
+				Assert.assertTrue(result);
+			} else {
+				Assert.assertFalse(result);
+			}
+			if ( !shouldRead() ) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if ( shouldRead() ) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -85,12 +104,17 @@ public class MemGraphTest {
 	@Test
 	public void testContainsTriple() throws Exception {
 		try {
-			Assert.assertTrue(securedGraph.contains(t));
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertTrue(securedGraph.contains(t));
+			} else {
+				Assert.assertFalse(securedGraph.contains(t));
+			}
+			
+			if (! shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if ( shouldRead() ) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -125,23 +149,28 @@ public class MemGraphTest {
 		try {
 			Assert.assertFalse(securedGraph.dependsOn(GraphFactory
 					.createDefaultGraph()));
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			if (! shouldRead() ) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
 			}
 		}
 		try {
-			Assert.assertTrue(securedGraph.dependsOn(baseGraph));
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			boolean result=securedGraph.dependsOn(baseGraph);
+			if ( securedGraph.canRead() ) {
+				Assert.assertTrue( result );
+			} else {
+				Assert.assertFalse( result );
+			}
+			if (! shouldRead() ) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -152,14 +181,20 @@ public class MemGraphTest {
 	@Test
 	public void testFindNodes() throws Exception {
 		try {
-
-			Assert.assertFalse(securedGraph.find(Node.ANY, Node.ANY, Node.ANY)
-					.toList().isEmpty());
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			List<Triple> result = securedGraph.find(Node.ANY, Node.ANY, Node.ANY)
+					.toList();
+			if (securityEvaluator.evaluate(Action.Read))
+			{
+				Assert.assertFalse(result.isEmpty());
+			} else {
+				Assert.assertTrue(result.isEmpty());
+			}
+			
+			if (! shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -170,12 +205,20 @@ public class MemGraphTest {
 	@Test
 	public void testFindTriple() throws Exception {
 		try {
-			Assert.assertFalse(securedGraph.find(t).toList().isEmpty());
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			
+			List<Triple> lst = securedGraph.find(t).toList();
+			if (securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertFalse( lst.isEmpty() );
+			}
+			else
+			{
+				Assert.assertTrue( lst.isEmpty() );
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if ( shouldRead() ) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -186,7 +229,12 @@ public class MemGraphTest {
 	@Test
 	public void testGetPrefixMapping() throws Exception {
 		SecuredPrefixMappingTest.runTests(securityEvaluator,
-				securedGraph.getPrefixMapping());
+				new Supplier<PrefixMapping>() { 
+					public PrefixMapping get() {
+						setUp();
+						return securedGraph.getPrefixMapping();
+					}},
+				baseGraph.getPrefixMapping().getNsPrefixMap());
 	}
 
 	@Test
@@ -199,29 +247,34 @@ public class MemGraphTest {
 		EqualityTester.testEquality("proxy and proxy2", securedGraph, g2);
 		EqualityTester.testInequality("base and proxy2", baseGraph, g2);
 	}
-
+	
 	@Test
 	public void testIsIsomorphicWith() throws Exception {
 		try {
 			Assert.assertFalse(securedGraph.isIsomorphicWith(GraphFactory
 					.createDefaultGraph()));
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			if ( !shouldRead() ) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if ( shouldRead() ) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
 			}
 		}
 		try {
-			Assert.assertTrue(securedGraph.isIsomorphicWith(baseGraph));
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
+			if (securityEvaluator.isHardReadError() || securityEvaluator.evaluate(Action.Read)) {
+				Assert.assertTrue(securedGraph.isIsomorphicWith(baseGraph));
+				if (!securityEvaluator.evaluate(Action.Read)) {
+					Assert.fail("Should have thrown ReadDeniedException Exception");
+				}
+			}
+			else {
+				Assert.assertFalse(securedGraph.isIsomorphicWith(baseGraph));
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if ( shouldRead() ) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -231,17 +284,19 @@ public class MemGraphTest {
 
 	@Test
 	public void testSize() throws Exception {
+		int expected = securityEvaluator.evaluate(Action.Read) ? 1 : 0;
 		try {
-			Assert.assertEquals(1, securedGraph.size());
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			Assert.assertEquals(expected, securedGraph.size());
+			if (! shouldRead() ) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if ( shouldRead() ) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
 			}
 		}
+		
 	}
 }

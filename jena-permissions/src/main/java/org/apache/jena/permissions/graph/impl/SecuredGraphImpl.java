@@ -17,6 +17,9 @@
  */
 package org.apache.jena.permissions.graph.impl;
 
+import java.util.function.Consumer;
+
+import org.apache.jena.ext.com.google.common.collect.Iterators;
 import org.apache.jena.graph.*;
 import org.apache.jena.permissions.SecuredItem;
 import org.apache.jena.permissions.SecurityEvaluator;
@@ -31,6 +34,7 @@ import org.apache.jena.shared.DeleteDeniedException;
 import org.apache.jena.shared.ReadDeniedException;
 import org.apache.jena.shared.UpdateDeniedException;
 import org.apache.jena.util.iterator.ExtendedIterator;
+import org.apache.jena.util.iterator.NullIterator;
 
 /**
  * Implementation of SecuredGraph to be used by a SecuredItemInvoker proxy.
@@ -93,22 +97,23 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public boolean contains(final Triple t) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		if (canRead(t)) {
-			return holder.getBaseItem().contains(t);
-		}
-		final ExtendedIterator<Triple> iter = holder.getBaseItem().find(t);
-		try {
-			while (iter.hasNext()) {
-				if (canRead(iter.next())) {
-					return true;
-				}
+		if (checkRead()) {
+			if (canRead(t)) {
+				return holder.getBaseItem().contains(t);
 			}
-			return false;
-		} finally {
-			iter.close();
-		}
-
+			final ExtendedIterator<Triple> iter = holder.getBaseItem().find(t);
+			try {
+				while (iter.hasNext()) {
+					if (canRead(iter.next())) {
+						return true;
+					}
+				}
+				return false;
+			} finally {
+				iter.close();
+			}
+		} 
+		return false;
 	}
 
 	private synchronized void createPrefixMapping() {
@@ -129,34 +134,41 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public boolean dependsOn(final Graph other) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		if (other.equals(holder.getBaseItem())) {
-			return true;
-		}
-		return holder.getBaseItem().dependsOn(other);
+		if (checkRead()) {
+			if (other.equals(holder.getBaseItem())) {
+				return true;
+			}
+			return holder.getBaseItem().dependsOn(other);
+		} 
+		return false;
 	}
 
 	@Override
 	public ExtendedIterator<Triple> find(final Node s, final Node p,
 			final Node o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		ExtendedIterator<Triple> retval = holder.getBaseItem().find(s, p, o);
-		if (!canRead(Triple.ANY)) {
-			retval = retval.filterKeep(new PermTripleFilter(Action.Read, this));
+		if (checkRead())
+		{
+			ExtendedIterator<Triple> retval = holder.getBaseItem().find(s, p, o);
+			if (!canRead(Triple.ANY)) {
+				retval = retval.filterKeep(new PermTripleFilter(Action.Read, this));
+			}
+			return retval;
 		}
-		return retval;
+		return NullIterator.instance();
 	}
 
 	@Override
 	public ExtendedIterator<Triple> find(final Triple m)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		checkRead();
-		ExtendedIterator<Triple> retval = holder.getBaseItem().find(m);
-		if (!canRead(Triple.ANY)) {
-			retval = retval.filterKeep(new PermTripleFilter(Action.Read, this));
+		if (checkRead()) {
+			ExtendedIterator<Triple> retval = holder.getBaseItem().find(m);
+			if (!canRead(Triple.ANY)) {
+				retval = retval.filterKeep(new PermTripleFilter(Action.Read, this));
+			}
+			return retval;
 		}
-		return retval;
+		return NullIterator.instance();
 	}
 
 	@Override
@@ -182,8 +194,14 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
     @Override
 	public GraphStatisticsHandler getStatisticsHandler()
 			throws ReadDeniedException, AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().getStatisticsHandler();
+		if (checkRead()) {
+			return holder.getBaseItem().getStatisticsHandler();
+		}
+		return new GraphStatisticsHandler() {
+			@Override
+			public long getStatistic(Node S, Node P, Node O) {
+				return 0;
+			}};
 	}
 
 	@Override
@@ -199,32 +217,42 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public boolean isEmpty() throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().isEmpty();
+		return checkRead() ? holder.getBaseItem().isEmpty() : true;
 	}
 
 	@Override
 	public boolean isIsomorphicWith(final Graph g) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		if (g.size() != holder.getBaseItem().size()) {
-			return false;
-		}
-		final Triple t = new Triple(Node.ANY, Node.ANY, Node.ANY);
-		if (!canRead(t)) {
-			final ExtendedIterator<Triple> iter = g.find(t);
-			while (iter.hasNext()) {
-				checkRead(iter.next());
+		if (checkRead()) {
+			if (g.size() != holder.getBaseItem().size()) {
+				return false;
 			}
+			final Triple t = new Triple(Node.ANY, Node.ANY, Node.ANY);
+			if (!canRead(t)) {
+				final ExtendedIterator<Triple> iter = g.find(t);
+				while (iter.hasNext()) {
+					if (!checkRead(iter.next()))
+					{
+						return false;
+					}
+				}
+			}
+			return holder.getBaseItem().isIsomorphicWith(g);
 		}
-		return holder.getBaseItem().isIsomorphicWith(g);
+		return false;
 	}
 
 	@Override
 	public int size() throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().size();
+		if (checkRead()) {
+			if (canRead( Triple.ANY )) {
+				return holder.getBaseItem().size();
+			} else {
+				return Iterators.size( find (Triple.ANY ) );
+			}
+		}
+		return 0;
 	}
 
 	@Override

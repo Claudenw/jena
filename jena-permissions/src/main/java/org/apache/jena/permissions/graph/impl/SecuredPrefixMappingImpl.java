@@ -17,6 +17,7 @@
  */
 package org.apache.jena.permissions.graph.impl;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -55,29 +56,25 @@ public class SecuredPrefixMappingImpl extends SecuredItemImpl implements
 	@Override
 	public String expandPrefix(final String prefixed)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().expandPrefix(prefixed);
+		return checkRead() ? holder.getBaseItem().expandPrefix(prefixed) : prefixed;
 	}
 
 	@Override
 	public Map<String, String> getNsPrefixMap() throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().getNsPrefixMap();
+		return checkRead() ? holder.getBaseItem().getNsPrefixMap() : Collections.emptyMap();
 	}
 
 	@Override
 	public String getNsPrefixURI(final String prefix)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().getNsPrefixURI(prefix);
+		return checkRead() ? holder.getBaseItem().getNsPrefixURI(prefix) : null;
 	}
 
 	@Override
 	public String getNsURIPrefix(final String uri) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().getNsURIPrefix(uri);
+		return checkRead() ? holder.getBaseItem().getNsURIPrefix(uri) : null;
 	}
 
 	@Override
@@ -91,8 +88,7 @@ public class SecuredPrefixMappingImpl extends SecuredItemImpl implements
 	@Override
 	public String qnameFor(final String uri) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().qnameFor(uri);
+		return checkRead() ? holder.getBaseItem().qnameFor(uri) : null;
 	}
 
 	@Override
@@ -113,8 +109,7 @@ public class SecuredPrefixMappingImpl extends SecuredItemImpl implements
     @Override
 	public boolean samePrefixMappingAs(final PrefixMapping other)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().samePrefixMappingAs(other);
+		return checkRead() ? holder.getBaseItem().samePrefixMappingAs(other) : false;
 	}
 
 	@Override
@@ -145,20 +140,17 @@ public class SecuredPrefixMappingImpl extends SecuredItemImpl implements
 	@Override
 	public String shortForm(final String uri) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		return holder.getBaseItem().shortForm(uri);
+		return checkRead() ? holder.getBaseItem().shortForm(uri) : uri;
 	}
 	
     @Override
     public boolean hasNoMappings() {
-        checkRead();
-        return holder.getBaseItem().hasNoMappings();
+        return checkRead() ? holder.getBaseItem().hasNoMappings() : true;
     }
 
     @Override
     public int numPrefixes() {
-        checkRead();
-        return holder.getBaseItem().numPrefixes();
+        return checkRead() ? holder.getBaseItem().numPrefixes() : 0;
     }
 
 	@Override

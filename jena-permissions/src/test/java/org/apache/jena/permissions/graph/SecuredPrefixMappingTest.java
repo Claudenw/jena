@@ -17,8 +17,11 @@
  */
 package org.apache.jena.permissions.graph;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 
 import org.junit.Assert;
 import org.apache.jena.graph.Graph;
@@ -37,17 +40,29 @@ import org.junit.runner.RunWith;
 
 @RunWith(value = SecurityEvaluatorParameters.class)
 public class SecuredPrefixMappingTest {
+	/**
+	 * Run tests from other classes that have instances of prefix mapping
+	 * @param securityEvaluator the SecurityEvaluator for the tests
+	 * @param prefixMapping The prefixMapping to test
+	 * @throws Exception on error
+	 */
 	public static void runTests(final SecurityEvaluator securityEvaluator,
-			final PrefixMapping prefixMapping) throws Exception {
-		final PrefixMapping pm = prefixMapping;
-		Assert.assertNotNull("PrefixMapping may not be null", pm);
-		Assert.assertTrue("PrefixMapping should be secured",
-				pm instanceof SecuredPrefixMapping);
+			final Supplier<PrefixMapping> supplier, final Map<String,String> aBaseMap) throws Exception {
+
 		final SecuredPrefixMappingTest pmTest = new SecuredPrefixMappingTest(
 				securityEvaluator) {
+			private Map<String,String> theBaseMap = aBaseMap;
+			private Supplier<PrefixMapping> theSupplier = supplier;
 			@Override
 			public void setup() {
+				PrefixMapping pm = supplier.get();
+				Assert.assertNotNull("PrefixMapping may not be null", pm);
+				Assert.assertTrue("PrefixMapping should be secured",
+						pm instanceof SecuredPrefixMapping);
+
 				this.securedMapping = (SecuredPrefixMapping) pm;
+				this.baseMap.clear();
+				this.baseMap.putAll( theBaseMap ); 
 			}
 		};
 		Method lockTest = null;
@@ -58,7 +73,12 @@ public class SecuredPrefixMappingTest {
 					lockTest = m;
 				} else {
 					pmTest.setup();
+					try {
 					m.invoke(pmTest);
+					} catch (InvocationTargetException e) {
+						e.getCause().printStackTrace();
+						throw e;
+					}
 				}
 
 			}
@@ -71,34 +91,53 @@ public class SecuredPrefixMappingTest {
 
 	private final SecurityEvaluator securityEvaluator;
 	private final Object principal;
-
+	
+	protected final Map<String,String> baseMap;
 	protected SecuredPrefixMapping securedMapping;
 
 	public SecuredPrefixMappingTest(final SecurityEvaluator securityEvaluator) {
 		this.securityEvaluator = securityEvaluator;
 		this.principal = securityEvaluator.getPrincipal();
+		this.baseMap = new HashMap<String,String>();
 	}
 
+	private boolean shouldRead() {
+		return ! securityEvaluator.isHardReadError() || 
+				shouldReadMapping();
+	}
+	
+	private boolean shouldReadMapping() {
+		return securityEvaluator.evaluate(principal, Action.Read,
+				securedMapping.getModelNode());
+	}
+	
 	@Before
 	public void setup() {
+		baseMap.clear();
 		final Graph g = GraphFactory.createDefaultGraph();
-
+		g.getPrefixMapping().setNsPrefix("foo", "http://example.com/foo/" );
+		baseMap.putAll( g.getPrefixMapping().getNsPrefixMap() );
 		final SecuredGraph sg = Factory.getInstance(securityEvaluator,
 				"http://example.com/testGraph", g);
+		
 		this.securedMapping = sg.getPrefixMapping();
 	}
 
 	@Test
 	public void testExpandPrefix() {
 		try {
-			securedMapping.expandPrefix("foo");
-			if (!securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			String result = securedMapping.expandPrefix("foo:");
+			if ( shouldReadMapping() )
+			{
+				Assert.assertEquals( "http://example.com/foo/", result );
+			} else {
+				Assert.assertEquals( "foo:", result );
+			}
+			if (! shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			if (shouldRead()) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -109,14 +148,19 @@ public class SecuredPrefixMappingTest {
 	@Test
 	public void testGetNsPrefixMap() {
 		try {
-			securedMapping.getNsPrefixMap();
-			if (!securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			Map<String,String> map = securedMapping.getNsPrefixMap();
+			if (shouldReadMapping())
+			{
+				Assert.assertEquals( "http://example.com/foo/", map.get("foo") );
+			} else {
+				Assert.assertTrue( map.isEmpty() );
+			}
+				
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			if (shouldRead()) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -127,14 +171,17 @@ public class SecuredPrefixMappingTest {
 	@Test
 	public void testGetNsPrefixURI() {
 		try {
-			securedMapping.getNsPrefixURI("foo");
-			if (!securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			String result = securedMapping.getNsPrefixURI("foo");
+			if (shouldReadMapping()) {
+				Assert.assertEquals( "http://example.com/foo/", result);
+			} else {
+				Assert.assertNull( result );
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			if (shouldRead()) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -146,14 +193,18 @@ public class SecuredPrefixMappingTest {
 	@Test
 	public void testGetNsURIPrefix() {
 		try {
-			securedMapping.getNsURIPrefix("http://example.com/foo");
-			if (!securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			String result = securedMapping.getNsURIPrefix("http://example.com/foo/");
+			if ( shouldReadMapping())
+			{
+				Assert.assertEquals("foo", result );
+			} else {
+				Assert.assertNull( result );
+			}
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			if (shouldRead()) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -183,14 +234,18 @@ public class SecuredPrefixMappingTest {
 	@Test
 	public void testQnameFor() {
 		try {
-			securedMapping.qnameFor("http://example.com/foo/bar");
-			if (!securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			// "http://example.com/foo/bar"
+			String result = securedMapping.qnameFor("http://example.com/foo/bar");
+			if ( shouldReadMapping() ) {
+				Assert.assertEquals("foo:bar", result );
+			} else {
+				Assert.assertNull( result );
+			}
+			if (! shouldRead() ) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			if ( shouldRead()) {
 				Assert.fail(String.format(
 						"Should not have thrown ReadDeniedException : %s - %s",
 						e, e.getTriple()));
@@ -220,15 +275,19 @@ public class SecuredPrefixMappingTest {
 	@Test
 	public void testSamePrefixMappingAs() {
 		try {
-			securedMapping.samePrefixMappingAs(GraphFactory
-					.createDefaultGraph().getPrefixMapping());
-			if (!securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			PrefixMapping pmap = GraphFactory.createDefaultGraph().getPrefixMapping();
+			pmap.setNsPrefixes( baseMap );
+			boolean result = securedMapping.samePrefixMappingAs(pmap);
+			if ( shouldReadMapping() ) {
+				Assert.assertTrue( result );
+			} else {
+				Assert.assertFalse( result );
+			}
+			if (! shouldRead() ) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			if (shouldRead()) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
@@ -239,7 +298,7 @@ public class SecuredPrefixMappingTest {
 	@Test
 	public void testSetNsPrefix() {
 		try {
-			securedMapping.setNsPrefix("foo", "http://example.com/foo");
+			securedMapping.setNsPrefix("foo2", "http://example.com/foo2");
 			if (!securityEvaluator.evaluate(principal, Action.Update,
 					securedMapping.getModelNode())) {
 
@@ -289,14 +348,18 @@ public class SecuredPrefixMappingTest {
 	@Test
 	public void testShortForm() {
 		try {
-			securedMapping.shortForm("http://example.com/foo/bar");
-			if (!securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			String result = securedMapping.shortForm("http://example.com/foo/bar");
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException");
 			}
+			if (shouldReadMapping()) {
+				Assert.assertEquals( "foo:bar", result );
+			} else {
+				Assert.assertEquals( "http://example.com/foo/bar", result );
+			}
+				
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(principal, Action.Read,
-					securedMapping.getModelNode())) {
+			if ( shouldRead() ) {
 				Assert.fail(String
 						.format("Should not have thrown ReadDeniedException Exception: %s - %s",
 								e, e.getTriple()));
