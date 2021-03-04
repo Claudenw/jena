@@ -664,14 +664,13 @@ public interface SecuredModel extends Model, SecuredPrefixMapping {
 	 *             )
 	 * @sec.triple create Triple( SecNode.Future, RDF.subject, t.getObject() )
 	 * @throws UpdateDeniedException
-	 * @throws ReadDeniedException
 	 * @throws AddDeniedException
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
 	public ReifiedStatement createReifiedStatement(final Statement s)
-			throws AddDeniedException, UpdateDeniedException, ReadDeniedException, AuthenticationRequiredException;
+			throws AddDeniedException, ReadDeniedException, AuthenticationRequiredException;
 
 	/**
 	 * @sec.graph Update
@@ -680,14 +679,13 @@ public interface SecuredModel extends Model, SecuredPrefixMapping {
 	 * @sec.triple create Triple( uri, RDF.subject, t.getPredicate() )
 	 * @sec.triple create Triple( uri, RDF.subject, t.getObject() )
 	 * @throws UpdateDeniedException
-	 * @throws ReadDeniedException
 	 * @throws AddDeniedException
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
 	public ReifiedStatement createReifiedStatement(final String uri, final Statement s)
-			throws AddDeniedException, UpdateDeniedException, ReadDeniedException, AuthenticationRequiredException;
+			throws AddDeniedException, UpdateDeniedException, AuthenticationRequiredException;
 
 	/**
 	 * @sec.graph Update
@@ -953,7 +951,7 @@ public interface SecuredModel extends Model, SecuredPrefixMapping {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredResource getAnyReifiedStatement(final Statement s)
+	public SecuredReifiedStatement getAnyReifiedStatement(final Statement s)
 			throws AddDeniedException, ReadDeniedException, UpdateDeniedException, AuthenticationRequiredException;
 
 	/**
@@ -1556,7 +1554,7 @@ public interface SecuredModel extends Model, SecuredPrefixMapping {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredModel query(final Selector s) throws ReadDeniedException, AuthenticationRequiredException;
+	public Model query(final Selector s) throws ReadDeniedException, AuthenticationRequiredException;
 
 	/**
 	 * 
