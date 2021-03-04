@@ -448,16 +448,6 @@ public class SecuredStatementImpl extends SecuredItemImpl implements
 	}
 
 	@Override
-	public String toString() throws ReadDeniedException,
-			AuthenticationRequiredException {
-		if (canRead() && canRead(holder.getBaseItem().asTriple())) {
-			return holder.getBaseItem().toString();
-		} else {
-			return super.toString();
-		}
-	}
-
-	@Override
 	public String getString() {
 		return getLiteral().getLexicalForm();
 	}

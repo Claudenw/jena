@@ -45,7 +45,7 @@ public class SecuredPropertyImpl extends SecuredResourceImpl implements
 			final Property property) {
 		if (securedModel == null) {
 			throw new IllegalArgumentException(
-					"Secured securedModel may not be null");
+					"SecuredModel may not be null");
 		}
 		if (property == null) {
 			throw new IllegalArgumentException("Property may not be null");

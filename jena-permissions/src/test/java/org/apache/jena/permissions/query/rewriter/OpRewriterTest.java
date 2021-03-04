@@ -58,7 +58,7 @@ public class OpRewriterTest {
 	@Test
 	public void testBGP() {
 		SecurityEvaluator securityEvaluator = new MockSecurityEvaluator(true,
-				true, true, true, true, true);
+				true, true, true, true, true, true);
 		rewriter = new OpRewriter(securityEvaluator, "http://example.com/dummy");
 
 		rewriter.visit(new OpBGP(BasicPattern.wrap(Arrays.asList(triples))));
@@ -95,7 +95,7 @@ public class OpRewriterTest {
 	@Test
 	public void testBGPNoReadAccess() {
 		SecurityEvaluator securityEvaluator = new MockSecurityEvaluator(true,
-				true, false, true, true, true);
+				true, false, true, true, true, true);
 		rewriter = new OpRewriter(securityEvaluator, "http://example.com/dummy");
 		Triple[] triples = {
 				new Triple(NodeFactory.createVariable("foo"),

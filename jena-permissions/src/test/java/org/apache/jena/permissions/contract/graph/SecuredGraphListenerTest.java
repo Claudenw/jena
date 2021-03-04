@@ -31,13 +31,13 @@ public class SecuredGraphListenerTest extends TestGraphListener
 			final String name )
 	{
 		super(graphClass, name);
-		eval = new MockSecurityEvaluator(true, true, true, true, true, true);
+		eval = new MockSecurityEvaluator(true, true, true, true, true, true, true);
 	}
 
 	public SecuredGraphListenerTest( final String name )
 	{
 		super(name);
-		eval = new MockSecurityEvaluator(true, true, true, true, true, true);
+		eval = new MockSecurityEvaluator(true, true, true, true, true, true, true);
 	}
 
 	@Override
