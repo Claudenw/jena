@@ -257,11 +257,11 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 
 		try {
 			getSecuredResource().getId();
-			if (!shouldRead()) {
+			if (!securityEvaluator.evaluate(Action.Read)) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (shouldRead()) {
+			if (securityEvaluator.evaluate(Action.Read)) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
