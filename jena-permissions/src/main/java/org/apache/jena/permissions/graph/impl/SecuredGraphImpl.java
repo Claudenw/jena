@@ -98,7 +98,7 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public boolean contains(final Triple t) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(t)) {
 				return holder.getBaseItem().contains(t);
 			}
@@ -135,7 +135,7 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public boolean dependsOn(final Graph other) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (other.equals(holder.getBaseItem())) {
 				return true;
 			}
@@ -148,7 +148,7 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	public ExtendedIterator<Triple> find(final Node s, final Node p,
 			final Node o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		if (checkRead())
+		if (checkSoftRead())
 		{
 			ExtendedIterator<Triple> retval = holder.getBaseItem().find(s, p, o);
 			if (!canRead(Triple.ANY)) {
@@ -162,7 +162,7 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public ExtendedIterator<Triple> find(final Triple m)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			ExtendedIterator<Triple> retval = holder.getBaseItem().find(m);
 			if (!canRead(Triple.ANY)) {
 				retval = retval.filterKeep(new PermTripleFilter(Action.Read, this));
@@ -204,13 +204,13 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public boolean isEmpty() throws ReadDeniedException,
 			AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().isEmpty() : true;
+		return checkSoftRead() ? holder.getBaseItem().isEmpty() : true;
 	}
 
 	@Override
 	public boolean isIsomorphicWith(final Graph g) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (g.size() != holder.getBaseItem().size()) {
 				return false;
 			}
@@ -232,7 +232,7 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public int size() throws ReadDeniedException,
 			AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead( Triple.ANY )) {
 				return holder.getBaseItem().size();
 			}

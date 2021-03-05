@@ -265,7 +265,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	 */
 	private SecuredStatementIterator stmtIterator( Supplier<ExtendedIterator<Statement>> supplier ) throws ReadDeniedException, AuthenticationRequiredException 
 	{
-		ExtendedIterator<Statement> iter = checkRead() ? supplier.get() : WrappedIterator.emptyIterator();
+		ExtendedIterator<Statement> iter = checkSoftRead() ? supplier.get() : WrappedIterator.emptyIterator();
 		return new SecuredStatementIterator(holder.getSecuredItem(), iter );		
 	}
 	
@@ -281,7 +281,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 			ResourceFilter filter)
 	{
 		ExtendedIterator<Resource> rIter = null;
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			rIter = supplier.get();
 			if (!canRead(Triple.ANY)) {
 				rIter = rIter.filterKeep(filter);
@@ -481,7 +481,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		final boolean exists = iter.hasNext();
 		iter.close();
 		if (exists) {
-			if (!checkRead() || !checkRead(t) ) {
+			if (!checkSoftRead() || !checkRead(t) ) {
 				throw new ReadDeniedException(
 						SecuredItem.Util.triplePermissionMsg(getModelNode()));
 			}
@@ -545,7 +545,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public boolean contains(final Statement s) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead() && checkRead(s)) {
+		if (checkSoftRead() && checkRead(s)) {
 			return holder.getBaseItem().contains(s);
 		}
 		return false;
@@ -558,7 +558,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public boolean containsAll(final StmtIterator iter) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			final boolean doCheck = canRead(Triple.ANY);
 			try {
 				while (iter.hasNext()) {
@@ -587,7 +587,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public boolean containsAny(final StmtIterator iter) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			final boolean skipCheck = canRead(Triple.ANY);
 			try {
 				while (iter.hasNext()) {
@@ -650,7 +650,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public boolean containsResource(final RDFNode r) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(new Triple(Node.ANY, Node.ANY, Node.ANY))) {
 				return holder.getBaseItem().containsResource(r);
 			} else {
@@ -876,7 +876,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		final Resource r = ResourceFactory.createResource(uri);
 		final Triple t = new Triple(r.asNode(), RDF.type.asNode(), type.asNode());
 		if (holder.getBaseItem().contains(r, RDF.type, type)) {
-			if ( !checkRead() || !checkRead(t) ) { 
+			if ( !checkSoftRead() || !checkRead(t) ) { 
 				throw new ReadDeniedException(
 						SecuredItem.Util.triplePermissionMsg(getModelNode()));
 			}
@@ -1018,7 +1018,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public Model difference(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				return holder.getBaseItem().difference(model);
 			} else {
@@ -1032,7 +1032,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	public void enterCriticalSection(final boolean readLockRequested)
 			throws UpdateDeniedException, ReadDeniedException, AuthenticationRequiredException {
 		if (readLockRequested) {
-			if (!checkRead()) {
+			if (!checkSoftRead()) {
 				throw new ReadDeniedException(
 						SecuredItem.Util.modelPermissionMsg(getModelNode()));
 			}
@@ -1054,12 +1054,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public String expandPrefix(final String prefixed) throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().expandPrefix(prefixed) : prefixed;
+		return checkSoftRead() ? holder.getBaseItem().expandPrefix(prefixed) : prefixed;
 	}
 
 	@Override
 	public SecuredAlt getAlt(final Resource r) throws ReadDeniedException, AuthenticationRequiredException {
-		if ( checkRead() &&
+		if ( checkSoftRead() &&
 				checkRead(new Triple(r.asNode(), RDF.type.asNode(), RDF.Alt.asNode()))) {
 			return SecuredAltImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getAlt(r));
 		}
@@ -1069,7 +1069,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public SecuredAlt getAlt(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-		if ( checkRead() &&
+		if ( checkSoftRead() &&
 				checkRead(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Alt.asNode()))) {
 			return SecuredAltImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getAlt(uri));
 		}
@@ -1098,7 +1098,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public SecuredBag getBag(final Resource r) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead() && checkRead(new Triple(r.asNode(), RDF.type.asNode(), RDF.Bag.asNode()))) {
+		if (checkSoftRead() && checkRead(new Triple(r.asNode(), RDF.type.asNode(), RDF.Bag.asNode()))) {
 			return SecuredBagImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getBag(r));
 		}
 		throw new ReadDeniedException(
@@ -1107,7 +1107,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public SecuredBag getBag(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead() && 	checkRead(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Bag.asNode()))) {
+		if (checkSoftRead() && 	checkRead(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Bag.asNode()))) {
 			return SecuredBagImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getBag(uri));
 		}
 		throw new ReadDeniedException(
@@ -1116,7 +1116,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	
 	@Override
 	public SecuredSeq getSeq(final Resource r) throws ReadDeniedException, AuthenticationRequiredException {
-	    if (checkRead() && checkRead(new Triple(r.asNode(), RDF.type.asNode(), RDF.Seq.asNode()))) {
+	    if (checkSoftRead() && checkRead(new Triple(r.asNode(), RDF.type.asNode(), RDF.Seq.asNode()))) {
 	    	return SecuredSeqImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getSeq(r));
 	    }
 	    throw new ReadDeniedException(
@@ -1125,7 +1125,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public SecuredSeq getSeq(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-	    if (checkRead() && checkRead(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Seq.asNode()))) {
+	    if (checkSoftRead() && checkRead(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Seq.asNode()))) {
 	    	return SecuredSeqImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getSeq(uri));
 	    }
 	    throw new ReadDeniedException(
@@ -1134,7 +1134,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     @Override
     public SecuredRDFList getList( String uri ) throws ReadDeniedException, AuthenticationRequiredException { 
-        if (checkRead()) {
+        if (checkSoftRead()) {
         	return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getList(uri));
         }
         throw new ReadDeniedException(
@@ -1143,7 +1143,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     
     @Override
     public SecuredRDFList getList( Resource r ) throws ReadDeniedException, AuthenticationRequiredException { 
-        if (checkRead()) {
+        if (checkSoftRead()) {
         	return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getList(r));
         }
         throw new ReadDeniedException(
@@ -1162,17 +1162,17 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public Map<String, String> getNsPrefixMap() throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().getNsPrefixMap() : Collections.emptyMap();
+		return checkSoftRead() ? holder.getBaseItem().getNsPrefixMap() : Collections.emptyMap();
 	}
 
 	@Override
 	public String getNsPrefixURI(final String prefix) throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().getNsPrefixURI(prefix) : null;
+		return checkSoftRead() ? holder.getBaseItem().getNsPrefixURI(prefix) : null;
 	}
 
 	@Override
 	public String getNsURIPrefix(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().getNsURIPrefix(uri) : null;
+		return checkSoftRead() ? holder.getBaseItem().getNsURIPrefix(uri) : null;
 	}
 	
 	private SecuredStatement getProperty( StmtIterator iter )
@@ -1202,7 +1202,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	}
 
 	private SecuredProperty getProperty( Supplier<Property> supplier ) throws ReadDeniedException, AuthenticationRequiredException  {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			return SecuredPropertyImpl.getInstance(holder.getSecuredItem(), supplier.get() );
 		}
 		throw new ReadDeniedException(
@@ -1235,7 +1235,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		}
 
 		if (holder.getBaseItem().containsResource(rdfNode)) {
-			if (!checkRead()) {
+			if (!checkSoftRead()) {
 				throw new ReadDeniedException(
 						SecuredItem.Util.modelPermissionMsg(getModelNode()));
 			}
@@ -1264,7 +1264,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public SecuredStatement getRequiredProperty(final Resource s, final Property p)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				return SecuredStatementImpl.getInstance(holder.getSecuredItem(),
 						holder.getBaseItem().getRequiredProperty(s, p));
@@ -1288,7 +1288,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public SecuredStatement getRequiredProperty(final Resource s, final Property p, String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				return SecuredStatementImpl.getInstance(holder.getSecuredItem(),
 						holder.getBaseItem().getRequiredProperty(s, p, lang));
@@ -1337,7 +1337,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public Model intersection(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (!canRead(Triple.ANY)) {
 				return holder.getBaseItem().intersection(model);
 			} else {
@@ -1365,7 +1365,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public boolean isIsomorphicWith(final Model g) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			final boolean retval = holder.getBaseItem().isIsomorphicWith(g);
 			if (retval && !canRead(Triple.ANY)) {
 				// in this case we have to check all the items in the graph to see
@@ -1391,7 +1391,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public boolean isReified(final Statement s) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead() && checkRead(s))
+		if (checkSoftRead() && checkRead(s))
 		{
 			final RSIterator it = listReifiedStatements(s);
 			try {
@@ -1446,12 +1446,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public NsIterator listNameSpaces() throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ?  holder.getBaseItem().listNameSpaces() : new NsIteratorImpl( Collections.emptyIterator(), null);
+		return checkSoftRead() ?  holder.getBaseItem().listNameSpaces() : new NsIteratorImpl( Collections.emptyIterator(), null);
 	}
 
 	private SecuredNodeIterator<RDFNode> nodeIterator( Supplier<ExtendedIterator<RDFNode>> supplier, Predicate<RDFNode> filter) {
 		ExtendedIterator<RDFNode> nIter = null;
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			nIter = supplier.get();
 			if (!canRead(Triple.ANY)) {
 				nIter = nIter.filterKeep(filter);
@@ -1482,7 +1482,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	private SecuredRSIterator reifiedIterator( Supplier<ExtendedIterator<ReifiedStatement>> supplier)
 	{
-		ExtendedIterator<ReifiedStatement> iter = checkRead() ?
+		ExtendedIterator<ReifiedStatement> iter = checkSoftRead() ?
 				supplier.get() :
 					WrappedIterator.emptyIterator();
 		return new SecuredRSIterator(holder.getSecuredItem(), iter );
@@ -1633,12 +1633,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public String qnameFor(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead()? holder.getBaseItem().qnameFor(uri) : null;
+		return checkSoftRead()? holder.getBaseItem().qnameFor(uri) : null;
 	}
 	
 	@Override
 	public Model query(final Selector s) throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().query(new SecuredSelector(holder.getSecuredItem(), s)) :
+		return checkSoftRead() ? holder.getBaseItem().query(new SecuredSelector(holder.getSecuredItem(), s)) :
 			ModelFactory.createDefaultModel();
 	}
 
@@ -1703,7 +1703,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public SecuredModel register(final ModelChangedListener listener)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (!listeners.containsKey(listener)) {
 				final SecuredModelChangedListener secL = new SecuredModelChangedListener(listener);
 				listeners.put(listener, secL);
@@ -1898,7 +1898,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public boolean samePrefixMappingAs(final PrefixMapping other)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().samePrefixMappingAs(other) : false;
+		return checkSoftRead() ? holder.getBaseItem().samePrefixMappingAs(other) : false;
 	}
 
 	@Override
@@ -1927,22 +1927,22 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public String shortForm(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().shortForm(uri) : uri;
+		return checkSoftRead() ? holder.getBaseItem().shortForm(uri) : uri;
 	}
 	
     @Override
     public boolean hasNoMappings() {
-        return checkRead() ? holder.getBaseItem().hasNoMappings() : true;
+        return checkSoftRead() ? holder.getBaseItem().hasNoMappings() : true;
     }
 
     @Override
     public int numPrefixes() {
-        return checkRead() ? holder.getBaseItem().numPrefixes() : 0;
+        return checkSoftRead() ? holder.getBaseItem().numPrefixes() : 0;
     }
 
 	@Override
 	public long size() throws ReadDeniedException, AuthenticationRequiredException {
-		return checkRead() ? holder.getBaseItem().size() : 0;
+		return checkSoftRead() ? holder.getBaseItem().size() : 0;
 	}
 
 	@Override
@@ -1957,7 +1957,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public Model union(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				return holder.getBaseItem().union(model);
 			} else {
@@ -2001,7 +2001,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public SecuredModel write(final OutputStream out) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				holder.getBaseItem().write(out);
 			} else {
@@ -2015,7 +2015,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public SecuredModel write(final OutputStream out, final String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				holder.getBaseItem().write(out, lang);
 			} else {
@@ -2028,7 +2028,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public SecuredModel write(final OutputStream out, final String lang, final String base)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				holder.getBaseItem().write(out, lang, base);
 			} else {
@@ -2041,7 +2041,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public SecuredModel write(final Writer writer) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				holder.getBaseItem().write(writer);
 			} else {
@@ -2054,7 +2054,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public SecuredModel write(final Writer writer, final String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				holder.getBaseItem().write(writer, lang);
 			} else {
@@ -2067,7 +2067,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public SecuredModel write(final Writer writer, final String lang, final String base)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkRead()) {
+		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				holder.getBaseItem().write(writer, lang, base);
 			} else {

@@ -17,6 +17,9 @@
  */
 package org.apache.jena.permissions.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import org.apache.jena.permissions.Factory;
 import org.apache.jena.permissions.MockSecurityEvaluator;
 import org.apache.jena.permissions.SecurityEvaluator.Action;
@@ -101,16 +104,12 @@ public class SecuredRDFNodeTest {
 
 	@Test
 	public void testCanAs() {
-		try {
-			securedRDFNode.canAs(Resource.class);
-			if (!securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
+		boolean actual = securedRDFNode.canAs(Resource.class);
+		if (!securityEvaluator.evaluate(Action.Read))
+		{
+			assertFalse( actual );
+		} else {
+			assertEquals( baseRDFNode.canAs(Resource.class), actual );
 		}
 	}
 
