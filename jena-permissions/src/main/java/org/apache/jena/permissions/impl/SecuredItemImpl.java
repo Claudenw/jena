@@ -689,6 +689,22 @@ public abstract class SecuredItemImpl implements SecuredItem {
 
 	/**
 	 * Checks that read on the securedModel/securedGraph is allowed.
+	 * 
+	 * @throws ReadDeniedException
+	 *             on failure
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
+	protected void checkRead() throws ReadDeniedException,
+			AuthenticationRequiredException {
+		if (!canRead()) {
+			throw new ReadDeniedException(
+					SecuredItem.Util.modelPermissionMsg(modelNode));
+		}
+	}
+	
+	/**
+	 * Checks that read on the securedModel/securedGraph is allowed.
 	 * <ul>
 	 * <li>
 	 * If the securedModel/securedGraph can not be read and the 
@@ -706,9 +722,8 @@ public abstract class SecuredItemImpl implements SecuredItem {
 	 *             on failure
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
-	 */
-	protected boolean checkRead() throws ReadDeniedException,
-			AuthenticationRequiredException {
+	 */	
+	protected boolean checkSoftRead() throws ReadDeniedException, AuthenticationRequiredException {
 		if (!canRead()) {
 			if (securityEvaluator.isHardReadError())
 			{

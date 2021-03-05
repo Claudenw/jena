@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import org.apache.jena.enhanced.UnsupportedPolymorphismException;
 import org.apache.jena.graph.FrontsNode;
 import org.apache.jena.graph.Node;
+import org.apache.jena.permissions.SecuredItem;
 import org.apache.jena.permissions.impl.ItemHolder;
 import org.apache.jena.permissions.impl.SecuredItemImpl;
 import org.apache.jena.permissions.model.SecuredModel;
@@ -116,11 +117,12 @@ public abstract class SecuredRDFNodeImpl extends SecuredItemImpl implements Secu
 
 	@Override
 	public <T extends RDFNode> boolean canAs(final Class<T> view)
-			throws ReadDeniedException, AuthenticationRequiredException {
-		checkRead();
-		// see if the base Item can as
-		if (holder.getBaseItem().canAs(view)) {
-			return getConstructor(view) != null;
+			throws AuthenticationRequiredException {
+		if (canRead()) {
+			// see if the base Item can as
+			if (holder.getBaseItem().canAs(view)) {
+				return getConstructor(view) != null;
+			}
 		}
 		return false;
 	}
@@ -180,7 +182,7 @@ public abstract class SecuredRDFNodeImpl extends SecuredItemImpl implements Secu
 
 	@Override
 	public boolean isStmtResource() {
-	    throw new UnsupportedOperationException("SecuredRDFNode.isStmtResource");
+		return holder.getBaseItem().isStmtResource();
 	}
 	
 	/**

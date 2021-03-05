@@ -49,7 +49,7 @@ public interface SecuredRDFNode extends RDFNode, SecuredItem {
 	 */
 	@Override
 	public <T extends RDFNode> boolean canAs(final Class<T> view)
-			throws ReadDeniedException, AuthenticationRequiredException;
+			throws AuthenticationRequiredException;
 
 	@Override
 	public SecuredModel getModel();

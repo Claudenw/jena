@@ -53,6 +53,10 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 	private SecuredResource getSecuredResource() {
 		return (SecuredResource) getSecuredRDFNode();
 	}
+	
+	private boolean shouldRead() {
+		return !securityEvaluator.isHardReadError() || securityEvaluator.evaluate(Action.Read);
+	}
 
 	@Override
 	@Before
@@ -253,11 +257,11 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 
 		try {
 			getSecuredResource().getId();
-			if (!securityEvaluator.evaluate(Action.Read)) {
+			if (!shouldRead()) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
-			if (securityEvaluator.evaluate(Action.Read)) {
+			if (shouldRead()) {
 				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
 						e.getTriple()));
 			}
