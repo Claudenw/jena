@@ -17,6 +17,9 @@
  */
 package org.apache.jena.permissions.graph;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -249,10 +252,17 @@ public class MemGraphTest {
 	}
 	
 	@Test
-	public void testIsIsomorphicWith() throws Exception {
+	public void testIsIsomorphicWith_Not() throws Exception {
+		
 		try {
-			Assert.assertFalse(securedGraph.isIsomorphicWith(GraphFactory
-					.createDefaultGraph()));
+				boolean actual = securedGraph.isIsomorphicWith(GraphFactory
+						.createDefaultGraph());
+				if (securityEvaluator.evaluate( Action.Read ))
+				{
+					assertFalse( actual );
+				} else {
+					assertTrue( actual );
+				}
 			if ( !shouldRead() ) {
 				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
@@ -263,15 +273,20 @@ public class MemGraphTest {
 								e, e.getTriple()));
 			}
 		}
+		
+	}
+	
+	@Test
+	public void testIsIsomorphicWith_Is() throws Exception {
 		try {
-			if (securityEvaluator.isHardReadError() || securityEvaluator.evaluate(Action.Read)) {
-				Assert.assertTrue(securedGraph.isIsomorphicWith(baseGraph));
-				if (!securityEvaluator.evaluate(Action.Read)) {
-					Assert.fail("Should have thrown ReadDeniedException Exception");
-				}
+			boolean actual = securedGraph.isIsomorphicWith(baseGraph);
+			if (securityEvaluator.evaluate( Action.Read )) {
+				assertTrue(actual);
+			} else {
+				assertFalse( actual );
 			}
-			else {
-				Assert.assertFalse(securedGraph.isIsomorphicWith(baseGraph));
+			if (!shouldRead()) {
+				Assert.fail("Should have thrown ReadDeniedException Exception");
 			}
 		} catch (final ReadDeniedException e) {
 			if ( shouldRead() ) {

@@ -18,6 +18,8 @@
 package org.apache.jena.permissions.impl;
 
 import java.lang.reflect.Proxy;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +31,7 @@ import org.apache.jena.graph.Triple;
 import org.apache.jena.permissions.SecuredItem;
 import org.apache.jena.permissions.SecurityEvaluator;
 import org.apache.jena.permissions.SecurityEvaluator.Action;
+import org.apache.jena.permissions.utils.PermTripleFilter;
 import org.apache.jena.shared.AddDeniedException;
 import org.apache.jena.shared.AuthenticationRequiredException;
 import org.apache.jena.shared.DeleteDeniedException;
@@ -37,6 +40,7 @@ import org.apache.jena.shared.UpdateDeniedException;
 import org.apache.jena.sparql.expr.Expr;
 import org.apache.jena.sparql.util.NodeUtils;
 import org.apache.jena.util.iterator.ExtendedIterator;
+import org.apache.jena.util.iterator.NullIterator;
 import org.apache.jena.vocabulary.RDF;
 
 /**
@@ -910,4 +914,25 @@ public abstract class SecuredItemImpl implements SecuredItem {
 	public boolean isEquivalent(final SecuredItem securedItem) {
 		return SecuredItem.Util.isEquivalent(this, securedItem);
 	}
+	
+	/**
+	 * Executes the find with permissions
+	 * @param find
+	 * @return
+	 */
+	protected <T> ExtendedIterator<T> createIterator( 
+			Supplier<ExtendedIterator<T>> find,
+			Supplier<Predicate<T>> filter)
+	{
+		if (checkSoftRead())
+		{
+			ExtendedIterator<T> retval = find.get();
+			if (!canRead(Triple.ANY)) {
+				retval = retval.filterKeep(filter.get());
+			}
+			return retval;
+		}
+		return NullIterator.instance();
+	}
+	
 }

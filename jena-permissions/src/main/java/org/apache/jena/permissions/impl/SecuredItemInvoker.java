@@ -90,10 +90,8 @@ public class SecuredItemInvoker implements InvocationHandler
 			{
 				return args[0].equals(securedItem);
 			}
-			else
-			{
-				return securedItem.equals(args[0]);
-			}
+			return securedItem.equals(args[0]);
+			
 		}
 
 		if (SecuredItemInvoker.HASH_CODE.equals(method))
