@@ -866,7 +866,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	}
 
 	@Override
-    public Resource createResource(Statement statement) {
+    public SecuredResource createResource(Statement statement) {
         throw new UnsupportedOperationException("SecuredModel.createResource(Statement)");
     }
 

@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -102,134 +103,49 @@ public class SecuredModelTest {
 		s2 = ResourceFactory.createResource("http://example.com/graph/s2");
 		o2 = ResourceFactory.createResource("http://example.com/graph/o2");
 	}
+	
+	private void __testAdd( Supplier<Model> addFunc ) {
+		final Set<Action> createAndUpdate = SecurityEvaluator.Util.asSet(new Action[] { Action.Update, Action.Create });
+		try {
+			assertNotNull( addFunc.get() );
+			if (!securityEvaluator.evaluate(createAndUpdate)) {
+				Assert.fail("Should have thrown AccessDeniedException Exception");
+			}
+		} catch (final AccessDeniedException e) {
+			if (securityEvaluator.evaluate(createAndUpdate)) {
+				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
+						e.getTriple()));
+			}
+		}
+		
+	}
 
 	@Test
 	public void testAdd() throws Exception {
 		final List<Statement> stmt = baseModel.listStatements().toList();
-		final Set<Action> createAndUpdate = SecurityEvaluator.Util.asSet(new Action[] { Action.Update, Action.Create });
-		try {
-			securedModel.add(stmt);
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(baseModel);
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(stmt.get(0));
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-
-			securedModel.add(stmt.toArray(new Statement[stmt.size()]));
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(baseModel.listStatements());
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(baseModel);
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(s, p, o);
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(s, p, "foo");
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(s, p, "foo", false);
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(s, p, "foo", XSDDatatype.XSDstring);
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-		try {
-			securedModel.add(s, p, "foo", "en");
-			if (!securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(createAndUpdate)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
+		__testAdd( ()-> securedModel.add(stmt)  );
+		__testAdd( ()-> securedModel.add(baseModel));
+		__testAdd( ()-> securedModel.add(stmt.get(0)));
+		__testAdd( ()-> securedModel.add(stmt.toArray(new Statement[stmt.size()])));
+		__testAdd( ()-> securedModel.add(baseModel.listStatements()));
+		__testAdd( ()-> securedModel.add(baseModel));
+		__testAdd( ()-> securedModel.add(s, p, o));
+		__testAdd( ()-> securedModel.add(s, p, "foo"));
+		__testAdd( ()-> securedModel.add(s, p, "foo", false));
+		__testAdd( ()-> securedModel.add(s, p, "foo", XSDDatatype.XSDstring));
+		__testAdd( ()-> securedModel.add(s, p, "foo", "en"));
+	}
+	
+	@Test
+	public void testAddLiteral() throws Exception {
+		__testAdd( ()-> securedModel.addLiteral(s,p,true) );
+		__testAdd( ()-> securedModel.addLiteral(s,p,'c'));
+		__testAdd( ()-> securedModel.addLiteral(s,p,2.0d));
+		__testAdd( ()-> securedModel.addLiteral(s, p, 2.0f));
+		__testAdd( ()-> securedModel.addLiteral(s, p, 5 ));
+		__testAdd( ()-> securedModel.addLiteral(s, p, 5L ));
+		__testAdd( ()-> securedModel.addLiteral(s, p, new ArrayList()));
+		__testAdd( ()-> securedModel.addLiteral(s, p, baseModel.createLiteral( "Literal" )));
 	}
 
 	@Test
