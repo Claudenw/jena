@@ -35,7 +35,6 @@ import org.apache.jena.shared.DeleteDeniedException;
 import org.apache.jena.shared.ReadDeniedException;
 import org.apache.jena.shared.UpdateDeniedException;
 import org.apache.jena.util.iterator.ExtendedIterator;
-import org.apache.jena.util.iterator.NullIterator;
 
 /**
  * Implementation of SecuredGraph to be used by a SecuredItemInvoker proxy.
@@ -76,6 +75,15 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 				holder.getBaseItem(), holder.getBaseItem().getEventManager());
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create
+	 * @throws AddDeniedException
+	 * @throws UpdateDeniedException
+	 *             if the graph can not be updated.
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public void add(final Triple t) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
@@ -84,17 +92,53 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 		holder.getBaseItem().add(t);
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete for every triple
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
+	@Override
+	public void clear() throws UpdateDeniedException,
+			AuthenticationRequiredException {
+		checkUpdate();
+		if (!canDelete(Triple.ANY)) {
+			ExtendedIterator<Triple> iter = holder.getBaseItem().find(
+					Triple.ANY);
+			while (iter.hasNext()) {
+				checkDelete(iter.next());
+			}
+		}
+		holder.getBaseItem().clear();
+	}
+
 	@Override
 	public void close() {
 		holder.getBaseItem().close();
 	}
 
+
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final Node s, final Node p, final Node o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return contains(new Triple(s, p, o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final Triple t) throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -117,13 +161,14 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 		return false;
 	}
 
-	private synchronized void createPrefixMapping() {
-		if (prefixMapping == null) {
-			prefixMapping = org.apache.jena.permissions.graph.impl.Factory
-					.getInstance(this, holder.getBaseItem().getPrefixMapping());
-		}
-	}
-
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete
+	 * @throws DeleteDeniedException
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public void delete(final Triple t) throws DeleteDeniedException,
 			AuthenticationRequiredException {
@@ -132,6 +177,16 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 		holder.getBaseItem().delete(t);
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true then
+	 * this method returns false.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean dependsOn(final Graph other) throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -143,33 +198,60 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 		} 
 		return false;
 	}
-
+	
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read, otherwise filtered from iterator.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true then
+	 * an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException on read not allowed
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
+	@Override
+	public ExtendedIterator<Triple> find() throws ReadDeniedException,
+			AuthenticationRequiredException {
+		return createIterator( ()->holder.getBaseItem().find( Triple.ANY ),
+				()->new PermTripleFilter(Action.Read, this));
+	}
+	
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read, otherwise filtered from iterator.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true then
+	 * an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public ExtendedIterator<Triple> find(final Node s, final Node p,
 			final Node o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		if (checkSoftRead())
-		{
-			ExtendedIterator<Triple> retval = holder.getBaseItem().find(s, p, o);
-			if (!canRead(Triple.ANY)) {
-				retval = retval.filterKeep(new PermTripleFilter(Action.Read, this));
-			}
-			return retval;
-		}
-		return NullIterator.instance();
+		return createIterator( ()->holder.getBaseItem().find( s, p, o ),
+				()->new PermTripleFilter(Action.Read, this));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read, otherwise filtered from iterator.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true then
+	 * an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
-	public ExtendedIterator<Triple> find(final Triple m)
+	public ExtendedIterator<Triple> find(final Triple t)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkSoftRead()) {
-			ExtendedIterator<Triple> retval = holder.getBaseItem().find(m);
-			if (!canRead(Triple.ANY)) {
-				retval = retval.filterKeep(new PermTripleFilter(Action.Read, this));
-			}
-			return retval;
-		}
-		return NullIterator.instance();
+		return createIterator( ()->holder.getBaseItem().find( t ),
+				()->new PermTripleFilter(Action.Read, this));
 	}
 
 	@Override
@@ -186,10 +268,16 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	@Override
 	public SecuredPrefixMapping getPrefixMapping() {
 		if (prefixMapping == null) {
-			createPrefixMapping();
+			synchronized (this) {
+				if (prefixMapping == null) {
+					prefixMapping = org.apache.jena.permissions.graph.impl.Factory
+							.getInstance(this, holder.getBaseItem().getPrefixMapping());
+				}
+			}
 		}
 		return prefixMapping;
 	}
+
 
 	@Override
 	public TransactionHandler getTransactionHandler() {
@@ -201,12 +289,32 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 		return holder.getBaseItem().isClosed();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * If {@link SecurityEvaluator#isHardReadError()} is false then
+	 * this method will return 0.
+	 * 
+	 * @throws ReadDeniedException if graph can not be read.
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean isEmpty() throws ReadDeniedException,
 			AuthenticationRequiredException {
 		return checkSoftRead() ? holder.getBaseItem().isEmpty() : true;
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * If {@link SecurityEvaluator#isHardReadError()} is false then
+	 * this method will return false unless {@code g} is empty.
+	 * 
+	 * @throws ReadDeniedException if graph can not be read.
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean isIsomorphicWith(final Graph g) throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -226,35 +334,18 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 			}
 			return holder.getBaseItem().isIsomorphicWith(g);
 		}
+
 		return false;
 	}
 
-	@Override
-	public int size() throws ReadDeniedException,
-			AuthenticationRequiredException {
-		if (checkSoftRead()) {
-			if (canRead( Triple.ANY )) {
-				return holder.getBaseItem().size();
-			}
-			return Iterators.size( find (Triple.ANY ) );
-		}
-		return 0;
-	}
-
-	@Override
-	public void clear() throws UpdateDeniedException,
-			AuthenticationRequiredException {
-		checkUpdate();
-		if (!canDelete(Triple.ANY)) {
-			ExtendedIterator<Triple> iter = holder.getBaseItem().find(
-					Triple.ANY);
-			while (iter.hasNext()) {
-				checkDelete(iter.next());
-			}
-		}
-		holder.getBaseItem().clear();
-	}
-
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete (s, p, o )
+	 * @throws DeleteDeniedException
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public void remove(Node s, Node p, Node o) throws UpdateDeniedException,
 			DeleteDeniedException, AuthenticationRequiredException {
@@ -263,13 +354,35 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 		if (t.isConcrete()) {
 			checkDelete(t);
 		} else {
-			ExtendedIterator<Triple> iter = holder.getBaseItem().find(
-					Triple.ANY);
+			ExtendedIterator<Triple> iter = holder.getBaseItem().find(t);
 			while (iter.hasNext()) {
 				checkDelete(iter.next());
 			}
 		}
 		holder.getBaseItem().remove(s, p, o);
+	}
+
+
+	/**
+	 * @sec.graph Read
+	 * 
+	 * If {@link SecurityEvaluator#isHardReadError()} is false then
+	 * this method will return 0.
+	 * 
+	 * @throws ReadDeniedException if graph can not be read.
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
+	@Override
+	public int size() throws ReadDeniedException,
+			AuthenticationRequiredException {
+		if (checkSoftRead()) {
+			if (canRead( Triple.ANY )) {
+				return holder.getBaseItem().size();
+			} 
+			return Iterators.size( find (Triple.ANY ) );
+		}
+		return 0;
 	}
 
 }

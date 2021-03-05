@@ -120,7 +120,7 @@ public class SecuredPrefixMappingTest {
 		final SecuredGraph sg = Factory.getInstance(securityEvaluator,
 				"http://example.com/testGraph", g);
 		
-		this.securedMapping = sg.getPrefixMapping();
+		this.securedMapping = (SecuredPrefixMapping) sg.getPrefixMapping();
 	}
 
 	@Test
