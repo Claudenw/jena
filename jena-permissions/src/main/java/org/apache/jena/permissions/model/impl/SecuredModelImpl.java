@@ -42,6 +42,7 @@ import org.apache.jena.rdf.model.impl.RDFReaderFImpl;
 import org.apache.jena.rdf.model.impl.StmtIteratorImpl;
 import org.apache.jena.shared.*;
 import org.apache.jena.util.iterator.ExtendedIterator;
+import org.apache.jena.util.iterator.NiceIterator;
 import org.apache.jena.util.iterator.WrappedIterator;
 import org.apache.jena.vocabulary.RDF;
 
@@ -50,7 +51,9 @@ import org.apache.jena.vocabulary.RDF;
  */
 public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
-	// a class that implements ModelChangedListener
+	/**
+	 * implements ModelChangedListener with premissions.
+	 */
 	private class SecuredModelChangedListener implements ModelChangedListener {
 		private final ModelChangedListener wrapped;
 
@@ -235,7 +238,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	// The secured graph that this securedModel contains.
 	private final SecuredGraph graph;
 
-	Map<ModelChangedListener, SecuredModelChangedListener> listeners = new HashMap<>();
+	private Map<ModelChangedListener, SecuredModelChangedListener> listeners = new HashMap<>();
 
 	/**
 	 * Constructor.
@@ -257,7 +260,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	/**
 	 * Create secured statement iterator from Supplier.
-	 * If the user can not read the model an empty lterator is returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
 	 * @param supplier the supplier for the ExtendedIterator of Statements.
 	 * @return the SecuredStatementIterator
 	 * @throws ReadDeniedException if HardReadErrors is enabled and user can not read.
@@ -265,15 +271,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	 */
 	private SecuredStatementIterator stmtIterator( Supplier<ExtendedIterator<Statement>> supplier ) throws ReadDeniedException, AuthenticationRequiredException 
 	{
-		ExtendedIterator<Statement> iter = checkSoftRead() ? supplier.get() : WrappedIterator.emptyIterator();
+		ExtendedIterator<Statement> iter = checkSoftRead() ? supplier.get() : NiceIterator.emptyIterator();
 		return new SecuredStatementIterator(holder.getSecuredItem(), iter );		
 	}
 	
 	/**
 	 * Create secured resource iterator from Supplier.
-	 * If the user can not read the model an empty lterator is returned.
-	 * @param supplier the supplier for the ExtendedIterator of Resources/
-	 * @return the SecuredStatementIterator
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @param supplier the supplier for the ExtendedIterator of Resources.
+	 * @return the SecuredResIterator
 	 * @throws ReadDeniedException if HardReadErrors is enabled and user can not read.
 	 * @throws AuthenticationRequiredException if the user is not authenticated.
 	 */
@@ -287,12 +296,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				rIter = rIter.filterKeep(filter);
 			}
 		} else {
-			rIter = WrappedIterator.emptyIterator();
+			rIter = NiceIterator.emptyIterator();
 		}
 		return new SecuredResIterator(holder.getSecuredItem(), rIter);		
 	}
 	
-
 	private RDFNode asObject(Object o) {
 		return o instanceof RDFNode ? (RDFNode) o : ResourceFactory.createTypedLiteral(o);
 	}
@@ -303,26 +311,48 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create for each statement as a triple.
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final List<Statement> statements)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		checkUpdate();
-		checkCreateFrontsTriples(WrappedIterator.create(statements.iterator()));
+		checkCreate( ()->WrappedIterator.create(statements.iterator()).mapWith( s -> s.asTriple()) );
 		holder.getBaseItem().add(statements);
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create for each statement in the securedModel as a triple.
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final Model m)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		checkUpdate();
-		if (!canCreate(Triple.ANY)) {
-			checkCreateFrontsTriples(m.listStatements());
-		}
+		checkCreate( ()->m.listStatements().mapWith( s -> s.asTriple()));
 		holder.getBaseItem().add(m);
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create the triple Triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final Resource s, final Property p, final RDFNode o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -332,12 +362,28 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create the triple Triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final Resource s, final Property p, final String o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		return add(s, p, o, false);
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create the triple Triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final Resource s, final Property p, final String o, final boolean wellFormed)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -347,6 +393,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create the triple Triple(s,p,literal(lex,datatype))
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final Resource s, final Property p, final String lex, final RDFDatatype datatype)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -356,6 +410,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create the triple Triple(s,p,literal(o,l,false))
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final Resource s, final Property p, final String o, final String l)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -365,6 +427,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create the statement as a triple
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final Statement s)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -374,94 +444,153 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create all the statements as triples.
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final Statement[] statements)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		checkUpdate();
-		if (!canCreate(Triple.ANY)) {
-			for (final Statement s : statements) {
-				checkCreate(s);
-			}
-		}
+		checkCreate( ()->WrappedIterator.create( Arrays.asList(statements).iterator()).mapWith( s -> s.asTriple()) );
 		holder.getBaseItem().add(statements);
 		return holder.getSecuredItem();
+		
 
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create all the statements as triples.
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel add(final StmtIterator iter)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		checkUpdate();
+		StmtIterator updateFrom = iter;
 		if (!canCreate(Triple.ANY)) {
-			final List<Triple> lst = new ArrayList<>();
-			try {
-				while (iter.hasNext()) {
-					final Statement s = iter.next();
-					checkCreate(s);
-					lst.add(s.asTriple());
-				}
-				final Model m = ModelFactory.createModelForGraph(new CollectionGraph(lst));
-				holder.getBaseItem().add(m.listStatements());
-			} finally {
-				iter.close();
-			}
-		} else {
-			holder.getBaseItem().add(iter);
-		}
+			// checkCreate will throw exception on first failure
+			List<Statement> stmt =iter.filterKeep( s -> {checkCreate( s );return true;} ).toList();
+			// now just add the list to the base
+			updateFrom = new StmtIteratorImpl( stmt.iterator() );
+		} 
+		holder.getBaseItem().add(updateFrom);		
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel addLiteral(final Resource s, final Property p, final boolean o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		final Literal l = ResourceFactory.createTypedLiteral(o);
-		if (l == null) {
-			throw new IllegalArgumentException("How did we get a null");
-		}
-		return add(s, p, l);
+		return add(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel addLiteral(final Resource s, final Property p, final char o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		final Literal l = ResourceFactory.createTypedLiteral(o);
-		return add(s, p, l);
+		return add(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel addLiteral(final Resource s, final Property p, final double o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		final Literal l = ResourceFactory.createTypedLiteral(o);
-		return add(s, p, l);
+		return add(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel addLiteral(final Resource s, final Property p, final float o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		final Literal l = ResourceFactory.createTypedLiteral(o);
-		return add(s, p, l);
+		return add(s, p, ResourceFactory.createTypedLiteral(o));
 	}
-
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel addLiteral(final Resource s, final Property p, final int o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		final Literal l = ResourceFactory.createTypedLiteral(o);
-		return add(s, p, l);
+		return add(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel addLiteral(final Resource s, final Property p, final Literal o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		return add(s, p, o);
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel addLiteral(final Resource s, final Property p, final long o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		final Literal l = ResourceFactory.createTypedLiteral(o);
-		return add(s, p, l);
+		return add(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create triple(s,p,o)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	@Deprecated
 	public SecuredModel addLiteral(final Resource s, final Property p, final Object o)
@@ -469,28 +598,34 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return add(s, p, asObject(o));
 	}
 
-	@Override
+	@Override 
 	public SecuredRDFNode asRDFNode(final Node n) {
 		return SecuredRDFNodeImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().asRDFNode(n));
 	}
 
+	/**
+	 * @sec.graph Read if t does exist
+	 * @sec.graph Update it t does not exist or can not be read
+	 * @sec.triple Read if t does exist
+	 * @sec.triple Create if t does not exist or can not be read
+	 * @throws AccessDeniedException on restriction
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement asStatement(final Triple t)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		final ExtendedIterator<Triple> iter = holder.getBaseItem().getGraph().find(t);
 		final boolean exists = iter.hasNext();
 		iter.close();
-		if (exists) {
-			if (!checkSoftRead() || !checkRead(t) ) {
-				throw new ReadDeniedException(
-						SecuredItem.Util.triplePermissionMsg(getModelNode()));
-			}
-		} else 
+		
+		// we can proceed if we can read what exists or if we can create one
+		if ((exists && canRead() && canRead(t)) ||
+				(canUpdate() && canCreate(t)))
 		{
-			checkUpdate();
-			checkCreate(t);
+			return SecuredStatementImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().asStatement(t));
 		}
-		return SecuredStatementImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().asStatement(t));
+		throw new AccessDeniedException( String.format( "Converting %s to Statement", t));
 	}
 
 	@Override
@@ -510,172 +645,395 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
-	private boolean contains( Supplier<ExtendedIterator<Statement>> supplier ) {
-		final SecuredStatementIterator iter = stmtIterator( supplier );
-		try {
-			return iter.hasNext();
-		} finally {
-			iter.close();
+	/**
+	 * Determines if there is a first element in the supplied iterator after 
+	 * filtering by ability to read. 
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @param supplier The extended iterator supplier
+	 * @return true if there is an enclosed element.
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
+	private boolean containsAny( Supplier<ExtendedIterator<Statement>> supplier)  {
+		if (checkSoftRead())
+		{
+			ExtendedIterator<Statement> iter = supplier.get();
+			try {
+				return iter.filterKeep( stmt -> canRead( stmt ) ).hasNext();
+			} finally {
+				iter.close();
+			}
 		}
+		return false;
 	}
 	
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, SecNode.ANY )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final Resource s, final Property p)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return contains( ()->holder.getBaseItem().listStatements(s, p, (RDFNode) null));
+		return containsAny( ()->holder.getBaseItem().listStatements(s, p, (RDFNode) null));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, SecNode.ANY )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final Resource s, final Property p, final RDFNode o)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return contains( ()->holder.getBaseItem().listStatements(s, p, o));
+		return containsAny( ()->holder.getBaseItem().listStatements(s, p, o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, SecNode.ANY )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final Resource s, final Property p, final String o)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return contains( ()->holder.getBaseItem().listStatements(s, p, o));
+		return containsAny( ()->holder.getBaseItem().listStatements(s, p, o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, SecNode.ANY )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final Resource s, final Property p, final String o, final String l)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return contains( ()->holder.getBaseItem().listStatements(s, p, o, l));
+		return containsAny( ()->holder.getBaseItem().listStatements(s, p, o, l));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, SecNode.ANY )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final Statement s) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkSoftRead() && checkRead(s)) {
-			return holder.getBaseItem().contains(s);
+		return (checkSoftRead() && canRead(s)) ?
+			holder.getBaseItem().contains(s)
+			: false;
+	}
+
+	/**
+	 * Verifies that all the items in the iterator can be read.
+	 * @param supplier
+	 * @return
+	 */
+	private boolean containsAll( Supplier<StmtIterator> supplier ) {
+		StmtIterator iter = supplier.get();
+		try {
+			while (iter.hasNext()) {
+				Statement stmt = iter.next();
+				if (!canRead( stmt ) || !holder.getBaseItem().contains(stmt)) {
+					return false;
+				}
+			}
+		} finally {
+			iter.close();
+		}
+		return true;
+	}
+
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read every statement in securedModel.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
+	@Override
+	public boolean containsAll(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
+		if (checkSoftRead()) {
+			if (canRead(Triple.ANY))
+			{
+				return holder.getBaseItem().containsAll(model);
+			}
+			// check every statement against this model
+			return containsAll(()->model.listStatements());
 		}
 		return false;
 	}
 
-	@Override
-	public boolean containsAll(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
-		return containsAll(model.listStatements());
-	}
-
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read every statement in securedModel.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsAll(final StmtIterator iter) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead()) {
-			final boolean doCheck = canRead(Triple.ANY);
-			try {
-				while (iter.hasNext()) {
-					final Statement stmt = iter.next();
-					if (doCheck) {
-						if (!checkRead(stmt)) {
-							return false;
-						}
-					}
-					if (!holder.getBaseItem().contains(stmt)) {
-						return false;
-					}
-				}
-				return true;
-			} finally {
-				iter.close();
+			if (canRead(Triple.ANY))
+			{
+				return holder.getBaseItem().containsAll(iter);
 			}
+			return containsAll( ()->iter );
+		}
+		return false;
+	}
+	
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read any statement in securedModel to be included in check,
+	 *             if no statement in securedModel can be read will return
+	 *             false;
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
+	@Override
+	public boolean containsAny(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
+		if (checkSoftRead()) {
+			if (canRead( Triple.ANY ))
+			{
+				return holder.getBaseItem().containsAll(model);
+			}
+			containsAny( ()->model.listStatements());
 		}
 		return false;
 	}
 
-	@Override
-	public boolean containsAny(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
-		return containsAny(model.listStatements());
-	}
-
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read any statement in securedModel to be included in check,
+	 *             if no statement in securedModel can be read will return
+	 *             false;
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsAny(final StmtIterator iter) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead()) {
-			final boolean skipCheck = canRead(Triple.ANY);
-			try {
-				while (iter.hasNext()) {
-					final Statement stmt = iter.next();
-					if (skipCheck || canRead(stmt)) {
-						if (holder.getBaseItem().contains(stmt)) {
-							return true;
-						}
-					}
-				}
-				return false;
-			} finally {
-				iter.close();
+			if (canRead( Triple.ANY ))
+			{
+				return holder.getBaseItem().containsAny(iter);
 			}
+			containsAny( ()->iter);
 		}
 		return false;
 	}
-
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, literal(o) )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsLiteral(final Resource s, final Property p, final boolean o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return contains(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, literal(o) )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsLiteral(final Resource s, final Property p, final char o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return contains(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, literal(o) )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsLiteral(final Resource s, final Property p, final double o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return contains(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, literal(o) )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsLiteral(final Resource s, final Property p, final float o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return contains(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, literal(o) )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsLiteral(final Resource s, final Property p, final int o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return contains(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, literal(o) )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsLiteral(final Resource s, final Property p, final long o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return contains(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, literal(o) )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsLiteral(final Resource s, final Property p, final Object o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return contains(s, p, asObject(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( s, p, resource) where Triple(s,p,resource) is in
+	 *             the securedModel.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean containsResource(final RDFNode r) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead()) {
-			if (canRead(new Triple(Node.ANY, Node.ANY, Node.ANY))) {
+			if (canRead( Triple.ANY )) {
 				return holder.getBaseItem().containsResource(r);
-			} else {
-				ExtendedIterator<Statement> iter = listStatements(null, null, r);
-				if (r.isResource()) {
-	
-					if (r.isURIResource()) {
-						iter = iter.andThen(
-								listStatements(null, ResourceFactory.createProperty(r.asNode().getURI()), (RDFNode) null));
-					} else {
-						iter = iter.andThen(listStatements(null,
-								ResourceFactory.createProperty(r.asNode().getBlankNodeLabel()), (RDFNode) null));
-					}
-					iter = iter.andThen(listStatements(r.asResource(), null, (RDFNode) null));
+			} 
+			ExtendedIterator<Statement> iter = listStatements(null, null, r);
+			if (r.isResource()) {
+				if (r.isURIResource()) {
+					iter = iter.andThen(
+							listStatements(null, ResourceFactory.createProperty(r.asNode().getURI()), (RDFNode) null));
+				} else {
+					iter = iter.andThen(listStatements(null,
+							ResourceFactory.createProperty(r.asNode().getBlankNodeLabel()), (RDFNode) null));
 				}
-				try {
-					return iter.hasNext();
-				} finally {
-					iter.close();
-				}
+				iter = iter.andThen(listStatements(r.asResource(), null, (RDFNode) null));
+			}
+			try {
+				return iter.hasNext();
+			} finally {
+				iter.close();
 			}
 		}
 		return false;
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( SecNode.ANY, RDF.type, Rdf.Alt)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt createAlt() throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		checkUpdate();
@@ -683,6 +1041,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return SecuredAltImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createAlt());
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( SecNode.ANY, RDF.type, Rdf.Alt)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt createAlt(final String uri)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -691,6 +1057,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return SecuredAltImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createAlt(uri));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( SecNode.ANY, RDF.type, Rdf.Bag)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredBag createBag() throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		checkUpdate();
@@ -698,6 +1072,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return SecuredBagImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createBag());
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( uri, RDF.type, Rdf.Bag)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredBag createBag(final String uri)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -706,47 +1088,87 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return SecuredBagImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createBag(uri));
 	}
 
-	private Model createCopy() throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
+	/**
+	 * Makes an independent copy of all statements the user can read in the model.
+	 * @return an independeny copy of the model.
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 */
+	private Model createCopy() throws ReadDeniedException, AuthenticationRequiredException {
 		return ModelFactory.createDefaultModel().add(holder.getSecuredItem());
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( SecurityEvaluator.FUTURE, RDF.type, Rdf.List)
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredRDFList createList()
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		checkUpdate();
-		checkCreate(new Triple(SecurityEvaluator.FUTURE, RDF.first.asNode(), RDF.nil.asNode()));
+		checkCreate(new Triple(SecurityEvaluator.FUTURE, RDF.type.asNode(), RDF.List.asNode()));
 		return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createList());
 	}
 
+	private SecuredRDFList createList( Supplier<ExtendedIterator<? extends RDFNode>> supplier ) {
+		checkUpdate();
+		checkCreate(new Triple(SecurityEvaluator.FUTURE, RDF.type.asNode(), RDF.List.asNode()));
+		ExtendedIterator<? extends RDFNode> iter =  supplier.get();
+		List<RDFNode> lst = new ArrayList<RDFNode>();
+		try {
+			// if the iterator is empty there are no first/rest nodes.
+			if (iter.hasNext() )
+			{
+				checkCreate(new Triple(SecurityEvaluator.FUTURE, RDF.rest.asNode(), RDF.nil.asNode()));
+				checkCreate(new Triple(SecurityEvaluator.FUTURE, RDF.rest.asNode(), SecurityEvaluator.FUTURE));
+			}
+			while (iter.hasNext())
+			{
+				RDFNode n = iter.next();
+				checkCreate(new Triple(SecurityEvaluator.FUTURE, RDF.first.asNode(), n.asNode()));
+				lst.add(n);
+			}
+			return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), 
+					holder.getBaseItem().createList(lst.iterator())); 
+		} finally {
+			iter.close();
+		}
+	}
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( RDF.nil, SecNode.IGNORE, SecNode.IGNORE)
+	 * @sec.triple Create for each member Triple(SecNode.ANY,
+	 *             RDF.first.asNode(), member.asNode())
+	 * @sec.triple Create Triple(SecNode.ANY, RDF.rest.asNode(), SecNode.ANY)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredRDFList createList(final Iterator<? extends RDFNode> members)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		checkUpdate();
-		checkCreate(new Triple(SecurityEvaluator.FUTURE, RDF.rest.asNode(), SecurityEvaluator.FUTURE));
-
-		boolean canCreateAny = canCreate(new Triple(SecurityEvaluator.FUTURE, RDF.first.asNode(), Node.ANY));
-		if (!canCreateAny) {
-			// have to check each of the possible entries in the list for
-			// creation.
-			final List<RDFNode> nodes = new ArrayList<>();
-			while (members.hasNext()) {
-
-				final RDFNode n = members.next();
-				checkCreate(new Triple(SecurityEvaluator.FUTURE, RDF.first.asNode(), n.asNode()));
-				nodes.add(n);
-			}
-			return SecuredRDFListImpl.getInstance(holder.getSecuredItem(),
-					holder.getBaseItem().createList(nodes.iterator()));
-
-		} else {
-			return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createList(members));
-		}
+		return createList( ()->WrappedIterator.create(members));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( RDF.nil, SecNode.IGNORE, SecNode.IGNORE)
+	 * @sec.triple Create for each member Triple(SecNode.ANY,
+	 *             RDF.first.asNode(), member.asNode())
+	 * @sec.triple Create Triple(SecNode.ANY, RDF.rest.asNode(), SecNode.ANY)
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredRDFList createList(RDFNode... members)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		return createList(Arrays.asList(members).iterator());
+		return createList( ()->WrappedIterator.create(Arrays.asList(members).iterator()) );
 	}
 
 	@Override
@@ -766,36 +1188,92 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return SecuredLiteralImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createLiteral(v, language));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s,p,o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createLiteralStatement(final Resource s, final Property p, final boolean o) {
 		return createStatement(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s,p,o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createLiteralStatement(final Resource s, final Property p, final char o) {
 		return createStatement(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s,p,o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createLiteralStatement(final Resource s, final Property p, final double o) {
 		return createStatement(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s,p,o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createLiteralStatement(final Resource s, final Property p, final float o) {
 		return createStatement(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s,p,o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createLiteralStatement(final Resource s, final Property p, final int o) {
 		return createStatement(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s,p,o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createLiteralStatement(final Resource s, final Property p, final long o) {
 		return createStatement(s, p, ResourceFactory.createTypedLiteral(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s,p,o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createLiteralStatement(final Resource s, final Property p, final Object o) {
 		return createStatement(s, p, asObject(o));
@@ -812,19 +1290,41 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				holder.getBaseItem().createProperty(nameSpace, localName));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Read s as a triple
+	 * @sec.triple Create Triple( SecNode.Future, RDF.subject, t.getSubject() )
+	 * @sec.triple Create Triple( SecNode.Future, RDF.subject, t.getPredicate() )
+	 * @sec.triple create Triple( SecNode.Future, RDF.subject, t.getObject() )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredReifiedStatement createReifiedStatement(final Statement s)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		checkUpdate();
+		// checkCreateReified does Update check
 		checkCreateReified(null, s);
 		return SecuredReifiedStatementImpl.getInstance(holder.getSecuredItem(),
 				holder.getBaseItem().createReifiedStatement(s));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Read s as a triple
+	 * @sec.triple create Triple( uri, RDF.subject, t.getSubject() )
+	 * @sec.triple create Triple( uri, RDF.subject, t.getPredicate() )
+	 * @sec.triple create Triple( uri, RDF.subject, t.getObject() )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredReifiedStatement createReifiedStatement(final String uri, final Statement s)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		checkUpdate();
+		// checkCreateReified does Update check
 		checkCreateReified(uri, s);
 		return SecuredReifiedStatementImpl.getInstance(holder.getSecuredItem(),
 				holder.getBaseItem().createReifiedStatement(uri, s));
@@ -832,17 +1332,22 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public SecuredResource createResource() {
-		// checkCreateAnonymousResource(SecurityEvaluator.FUTURE);
 		return SecuredResourceImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createResource());
 	}
 
 	@Override
 	public SecuredResource createResource(final AnonId id) {
-		// checkCreateAnonymousResource(new SecurityEvaluator.SecNode(
-		// SecurityEvaluator.SecNode.Type.Anonymous, id.getLabelString()));
 		return SecuredResourceImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createResource(id));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( SecNode.FUTURE, RDF.type, type )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResource createResource(final Resource type)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -866,25 +1371,43 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	}
 
 	@Override
-    public SecuredResource createResource(Statement statement) {
-        throw new UnsupportedOperationException("SecuredModel.createResource(Statement)");
+    public Resource createResource(Statement statement) {
+		return SecuredResourceImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createResource(statement));
     }
 
+	private void checkReadOrUpdate( Resource s, Property p, RDFNode o)
+	{
+		if (!canReadOrUpdate( s, p, o ))
+		{
+			throw new AddDeniedException( String.format("Can not create Statement [ %s ,%s %s ]", s, p, o));				
+		}
+
+	}
+	private boolean canReadOrUpdate( Resource s, Property p, RDFNode o)
+	{
+		Triple t = new Triple( s.asNode(), p.asNode(), o.asNode() );
+		boolean canExecute = canUpdate() && canCreate( t );
+		if (!canExecute && holder.getBaseItem().contains(s, p, o)) {
+			canExecute |=  (canRead() && canRead(t));
+		}
+		return canExecute;
+	}
+	/**
+	 * @sec.graph Update if uri exists
+	 * @sec.graph Create if uri does not exist
+	 * @sec.triple Read if Triple( uri, RDF.type, type ) exists
+	 * @sec.triple Create if Triple( uri, RDF.type, type ) does not exist
+	 * @throws UpdateDeniedException
+	 * @throws ReadDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
     @Override
 	public SecuredResource createResource(final String uri, final Resource type)
-			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		final Resource r = ResourceFactory.createResource(uri);
-		final Triple t = new Triple(r.asNode(), RDF.type.asNode(), type.asNode());
-		if (holder.getBaseItem().contains(r, RDF.type, type)) {
-			if ( !checkSoftRead() || !checkRead(t) ) { 
-				throw new ReadDeniedException(
-						SecuredItem.Util.triplePermissionMsg(getModelNode()));
-			}
-			checkUpdate();
-			checkCreate(t);
-		}
+			throws AccessDeniedException, AuthenticationRequiredException {
+    	checkReadOrUpdate( ResourceFactory.createResource(uri), RDF.type, type );
 		return SecuredResourceImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createResource(uri, type));
-
 	}
 
 	@Override
@@ -893,6 +1416,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return SecuredResourceImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createResource(uri, f));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( SecNode.FUTURE, RDF.type, RDF.Alt )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredSeq createSeq() throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		checkUpdate();
@@ -900,30 +1431,59 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return SecuredSeqImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createSeq());
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( uri, RDF.type, RDF.Alt )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredSeq createSeq(final String uri)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		checkUpdate();
-		checkCreate(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Alt.asNode()));
+		checkReadOrUpdate(ResourceFactory.createResource(uri), RDF.type, RDF.Alt);
 		return SecuredSeqImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createSeq(uri));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s, p, o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createStatement(final Resource s, final Property p, final RDFNode o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		checkUpdate();
-		checkCreate(new Triple(s.asNode(), p.asNode(), o.asNode()));
+		checkReadOrUpdate( s, p, o);
 		return SecuredStatementImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createStatement(s, p, o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s, p, o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createStatement(final Resource s, final Property p, final String o)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		checkUpdate();
-		checkCreate(new Triple(s.asNode(), p.asNode(), NodeFactory.createURI(o)));
+		checkReadOrUpdate( s, p, ResourceFactory.createProperty(o));
 		return SecuredStatementImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().createStatement(s, p, o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s, p, o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createStatement(final Resource s, final Property p, final String o,
 			final boolean wellFormed)
@@ -931,18 +1491,34 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return createStatement(s, p, o, "", wellFormed);
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s, p, o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createStatement(final Resource s, final Property p, final String o, final String l)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
 		return createStatement(s, p, o, l, false);
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create Triple( s, p, o )
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement createStatement(final Resource s, final Property p, final String o, final String l,
 			final boolean wellFormed)
 			throws UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
-		checkUpdate();
-		checkCreate(new Triple(s.asNode(), p.asNode(), NodeFactory.createLiteral(o, l, wellFormed)));
+		Node n = NodeFactory.createLiteral( o, l, wellFormed );
+		checkReadOrUpdate( s, p, holder.getBaseItem().getRDFNode( n ) );
 		return SecuredStatementImpl.getInstance(holder.getSecuredItem(),
 				holder.getBaseItem().createStatement(s, p, o, l, wellFormed));
 	}
@@ -1016,14 +1592,23 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				holder.getBaseItem().createTypedLiteral(lex, typeURI));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read for every triple contributed to the difference.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an model will be returned.
+	 * 
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
-	public Model difference(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
+	public Model difference(final Model model) throws AuthenticationRequiredException {
 		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				return holder.getBaseItem().difference(model);
-			} else {
-				return createCopy().difference(model);
-			}
+			} 
+			return createCopy().difference(model);
 		}
 		return ModelFactory.createDefaultModel();
 	}
@@ -1031,14 +1616,6 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	@Override
 	public void enterCriticalSection(final boolean readLockRequested)
 			throws UpdateDeniedException, ReadDeniedException, AuthenticationRequiredException {
-		if (readLockRequested) {
-			if (!checkSoftRead()) {
-				throw new ReadDeniedException(
-						SecuredItem.Util.modelPermissionMsg(getModelNode()));
-			}
-		} else {
-			checkUpdate();
-		}
 		holder.getBaseItem().enterCriticalSection(readLockRequested);
 	}
 
@@ -1052,6 +1629,16 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getBaseItem().calculateInTxn(action);
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then original argument will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public String expandPrefix(final String prefixed) throws ReadDeniedException, AuthenticationRequiredException {
 		return checkSoftRead() ? holder.getBaseItem().expandPrefix(prefixed) : prefixed;
@@ -1059,24 +1646,39 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	@Override
 	public SecuredAlt getAlt(final Resource r) throws ReadDeniedException, AuthenticationRequiredException {
-		if ( checkSoftRead() &&
-				checkRead(new Triple(r.asNode(), RDF.type.asNode(), RDF.Alt.asNode()))) {
-			return SecuredAltImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getAlt(r));
-		}
-		throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		checkReadOrUpdate( r, RDF.type, RDF.Alt );
+		return SecuredAltImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getAlt(r));
 	}
 
 	@Override
 	public SecuredAlt getAlt(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-		if ( checkSoftRead() &&
-				checkRead(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Alt.asNode()))) {
-			return SecuredAltImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getAlt(uri));
-		}
-		throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		checkReadOrUpdate( ResourceFactory.createResource(uri), RDF.type, RDF.Alt );
+		return SecuredAltImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getAlt(uri));
 	}
 
+	/**
+	 * @sec.graph Read if statement exists
+	 * @sec.graph Update if statement does not exist
+	 * @sec.triple Read s as a triple
+	 * @sec.triple Read Triple( result, RDF.subject, s.getSubject() ) if
+	 *             reification existed
+	 * @sec.triple Read Triple( result, RDF.predicate, s.getPredicate() ) if
+	 *             reification existed
+	 * @sec.triple Read Triple( result, RDF.object, s.getObject() ) if
+	 *             reification existed
+	 * @sec.triple Create Triple( result, RDF.subject, s.getSubject() ) if
+	 *             reification did not exist.
+	 * @sec.triple Create Triple( result, RDF.predicate, s.getPredicate() ) if
+	 *             reification did not exist
+	 * @sec.triple Create Triple( result, RDF.object, s.getObject() ) if
+	 *             reification did not exist
+	 *             
+	 * @throws ReadDeniedException
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredReifiedStatement getAnyReifiedStatement(final Statement s)
 			throws ReadDeniedException, UpdateDeniedException, AddDeniedException, AuthenticationRequiredException {
@@ -1091,63 +1693,97 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				}
 			}
 		}
-		// either we are not allowed to read or there are no reified statements
-		return SecuredReifiedStatementImpl.getInstance(holder.getSecuredItem(), createReifiedStatement(s));
+		/*
+		 *  either we are not allowed to read or there are no reified statements
+		 *  so create them
+		 */
+		return createReifiedStatement(s);
 		
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( resource, RDF.type, RDF.Bag )
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredBag getBag(final Resource r) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkSoftRead() && checkRead(new Triple(r.asNode(), RDF.type.asNode(), RDF.Bag.asNode()))) {
-			return SecuredBagImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getBag(r));
-		}
-		throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		checkReadOrUpdate( r, RDF.type, RDF.Bag);
+		return SecuredBagImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getBag(r));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read Triple( ure, RDF.type, RDF.Bag )
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredBag getBag(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-		if (checkSoftRead() && 	checkRead(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Bag.asNode()))) {
-			return SecuredBagImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getBag(uri));
-		}
-		throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		checkReadOrUpdate( ResourceFactory.createResource(uri), RDF.type, RDF.Bag);
+		return SecuredBagImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getBag(uri));
 	}
 	
+	/**
+	 * 
+	 * @sec.graph Read
+	 * @sec.triple Read on Triple(resource, RDF.type, RDF.Seq)
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredSeq getSeq(final Resource r) throws ReadDeniedException, AuthenticationRequiredException {
-	    if (checkSoftRead() && checkRead(new Triple(r.asNode(), RDF.type.asNode(), RDF.Seq.asNode()))) {
-	    	return SecuredSeqImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getSeq(r));
-	    }
-	    throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		checkReadOrUpdate( r, RDF.type, RDF.Seq);
+	    return SecuredSeqImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getSeq(r));	    
 	}
 
+	/**
+	 * 
+	 * @sec.graph Read
+	 * @sec.triple Read on Triple(uri, RDF.type, RDF.Seq)
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredSeq getSeq(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-	    if (checkSoftRead() && checkRead(new Triple(NodeFactory.createURI(uri), RDF.type.asNode(), RDF.Seq.asNode()))) {
-	    	return SecuredSeqImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getSeq(uri));
-	    }
-	    throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		checkReadOrUpdate( ResourceFactory.createResource(uri), RDF.type, RDF.Seq);
+    	return SecuredSeqImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getSeq(uri));
 	}
 
+	/** Return a RDF List instance in this model.
+	 *
+	 * <p>Subsequent operations on the returned list may modify this model.</p>
+	 * <p>The list is assumed to already exist in the model.  If it does not,
+	 * <CODE>createList</CODE> should be used instead.</p>
+	 * @return a list instance
+	 * @param uri the URI of the list
+	 */ 
     @Override
     public SecuredRDFList getList( String uri ) throws ReadDeniedException, AuthenticationRequiredException { 
-        if (checkSoftRead()) {
-        	return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getList(uri));
-        }
-        throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		checkReadOrUpdate( ResourceFactory.createResource(uri), RDF.type, RDF.List);
+       	return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getList(uri));
     }
     
+	/** Return a RDF List based on a given resource.
+	 * 
+	 * <p> This method enables an application to treat any resource as a list.
+	 *     It is in effect an unsafe downcast.</p>
+	 *
+	 * <p>Subsequent operations on the returned list may modify this model.</p>
+	 * <p>The list is assumed to already exist in the model.  If it does not,
+	 * <CODE>createList</CODE> should be used instead.</p>
+	 * @return a list instance
+	 * @param r the resource of the list
+	 */
     @Override
     public SecuredRDFList getList( Resource r ) throws ReadDeniedException, AuthenticationRequiredException { 
-        if (checkSoftRead()) {
-        	return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getList(r));
-        }
-        throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		checkReadOrUpdate( r, RDF.type, RDF.List);
+		return SecuredRDFListImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getList(r));
     } 
 	
 	@Override
@@ -1160,95 +1796,127 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getBaseItem().getLock();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty map will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public Map<String, String> getNsPrefixMap() throws ReadDeniedException, AuthenticationRequiredException {
 		return checkSoftRead() ? holder.getBaseItem().getNsPrefixMap() : Collections.emptyMap();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code null} will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public String getNsPrefixURI(final String prefix) throws ReadDeniedException, AuthenticationRequiredException {
 		return checkSoftRead() ? holder.getBaseItem().getNsPrefixURI(prefix) : null;
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code null} will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public String getNsURIPrefix(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
 		return checkSoftRead() ? holder.getBaseItem().getNsURIPrefix(uri) : null;
 	}
 	
-	private SecuredStatement getProperty( StmtIterator iter )
+	/**
+	 * Returns the first statement from the iterator.
+	 * @param the supplier of the iterator.
+	 * @return the statement or null if no statements exist or can be read.
+	 */
+	private SecuredStatement _getProperty( Supplier<StmtIterator> supplier )
 	{
-		try {
-			if (iter.hasNext()) {
-				return SecuredStatementImpl.getInstance(holder.getSecuredItem(), iter.next());
-			}
-			return null;
-		} finally {
-			if (iter != null) {
+		if (checkSoftRead()) {
+			ExtendedIterator<Statement> iter = supplier.get().filterKeep( s -> canRead( s ));
+			try {
+				return iter.hasNext() ?
+					SecuredStatementImpl.getInstance(holder.getSecuredItem(), iter.next())
+					: null;
+			} finally {
 				iter.close();
 			}
 		}
+		return null;
 	}
 	
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on the returned statement.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code null} will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement getProperty(final Resource s, final Property p)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return getProperty( listStatements(s, p, (RDFNode) null) );
+		return _getProperty( ()->holder.getBaseItem().listStatements(s, p, (RDFNode) null) );
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on the returned statement.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code null} will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement getProperty(Resource s, Property p, String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return getProperty( listStatements(s, p, null, lang) );
+		return _getProperty( ()->holder.getBaseItem().listStatements(s, p, null, lang) );
 	}
 
-	private SecuredProperty getProperty( Supplier<Property> supplier ) throws ReadDeniedException, AuthenticationRequiredException  {
-		if (checkSoftRead()) {
-			return SecuredPropertyImpl.getInstance(holder.getSecuredItem(), supplier.get() );
-		}
-		throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
-	}
-	
 	@Override
 	public SecuredProperty getProperty(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
-		return getProperty( ()->holder.getBaseItem().getProperty(uri));
+		return SecuredPropertyImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getProperty(uri));
 	}
 
 	@Override
 	public SecuredProperty getProperty(final String nameSpace, final String localName)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return getProperty( ()->holder.getBaseItem().getProperty(nameSpace, localName));
+		return SecuredPropertyImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().getProperty(nameSpace, localName));
 	}
 
 	@Override
 	public SecuredRDFNode getRDFNode(final Node n)
 			throws ReadDeniedException, UpdateDeniedException, AuthenticationRequiredException {
-		RDFNode rdfNode = null;
-		if (n.isLiteral()) {
-			rdfNode = ResourceFactory.createTypedLiteral(n.getLiteralLexicalForm(), n.getLiteralDatatype());
-		} else if (n.isURI()) {
-			rdfNode = ResourceFactory.createProperty(n.getURI());
-		} else if (n.isBlank()) {
-			rdfNode = ResourceFactory.createResource(n.getBlankNodeId().toString());
-		} else {
-			throw new IllegalArgumentException("Illegal Node type: " + n.getClass());
-		}
-
-		if (holder.getBaseItem().containsResource(rdfNode)) {
-			if (!checkSoftRead()) {
-				throw new ReadDeniedException(
-						SecuredItem.Util.modelPermissionMsg(getModelNode()));
-			}
-		} else {
-			checkUpdate();
-		}
 		if (n.isLiteral()) {
 			return SecuredLiteralImpl.getInstance(holder.getSecuredItem(),
 					holder.getBaseItem().getRDFNode(n).asLiteral());
-		} else {
+		} else if (n.isURI() || n.isBlank()) {
 			return SecuredResourceImpl.getInstance(holder.getSecuredItem(),
 					holder.getBaseItem().getRDFNode(n).asResource());
-		}
+		} 
+		throw new IllegalArgumentException("Illegal Node type: " + n.getClass());
 	}
 
 	@Override
@@ -1261,6 +1929,21 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getBaseItem().getReader(lang);
 	}
 
+	/**
+	 * . If the PropertyNotFoundException was thrown by the enclosed
+	 * securedModel and the user can not read Triple(s, p, SecNode.ANY)
+	 * AccessDeniedException is thrown, otherwise the PropertyNotFoundException
+	 * will be thrown.
+	 * 
+	 * @sec.graph Read
+	 * @sec.triple Read on the returned statement
+	 * @sec.triple Read on Triple(s, p, SecNode.ANY) if
+	 *             PropertyNotFoundException was thrown
+	 * @throws ReadDeniedException
+	 * @throws PropertyNotFoundException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement getRequiredProperty(final Resource s, final Property p)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1268,23 +1951,36 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 			if (canRead(Triple.ANY)) {
 				return SecuredStatementImpl.getInstance(holder.getSecuredItem(),
 						holder.getBaseItem().getRequiredProperty(s, p));
-			} else {
-				final SecuredStatementIterator si = listStatements(s, p, (RDFNode) null);
-				try {
-					if (si.hasNext()) {
-						return (SecuredStatement) si.next();
-					} else {
-						throw new PropertyNotFoundException(p);
-					}
-				} finally {
-					si.close();
+			} 
+			ExtendedIterator<Statement> iter = holder.getBaseItem().listStatements(s, p, (RDFNode) null)
+					.filterKeep( f -> canRead( f ));
+			try {
+				if (iter.hasNext()) {
+					return SecuredStatementImpl.getInstance(holder.getSecuredItem(),
+							iter.next());
 				}
+			} finally {
+				iter.close();
 			}
 		}
-		throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		throw new PropertyNotFoundException(p);
 	}
 
+	/**
+	 * . If the PropertyNotFoundException was thrown by the enclosed
+	 * securedModel and the user can not read Triple(s, p, SecNode.ANY)
+	 * AccessDeniedException is thrown, otherwise the PropertyNotFoundException
+	 * will be thrown.
+	 * 
+	 * @sec.graph Read
+	 * @sec.triple Read on the returned statement
+	 * @sec.triple Read on Triple(s, p, SecNode.ANY) if
+	 *             PropertyNotFoundException was thrown
+	 * @throws ReadDeniedException
+	 * @throws PropertyNotFoundException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatement getRequiredProperty(final Resource s, final Property p, String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1292,21 +1988,19 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 			if (canRead(Triple.ANY)) {
 				return SecuredStatementImpl.getInstance(holder.getSecuredItem(),
 						holder.getBaseItem().getRequiredProperty(s, p, lang));
-			} else {
-				final SecuredStatementIterator si = listStatements(s, p, null, lang);
-				try {
-					if (si.hasNext()) {
-						return (SecuredStatement) si.next();
-					} else {
-						throw new PropertyNotFoundException(p);
-					}
-				} finally {
-					si.close();
+			} 
+			ExtendedIterator<Statement> iter = holder.getBaseItem().listStatements(s, p, null, lang)
+					.filterKeep( f -> canRead( f ));
+			try {
+				if (iter.hasNext()) {
+					return SecuredStatementImpl.getInstance(holder.getSecuredItem(),
+							iter.next());
 				}
+			} finally {
+				iter.close();
 			}
 		}
-		throw new ReadDeniedException(
-				SecuredItem.Util.modelPermissionMsg(getModelNode()));
+		throw new PropertyNotFoundException(p);
 	}
 
 	@Override
@@ -1335,14 +2029,23 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return false;
 	}
 
+	/**
+	 * 
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples contributed to the new securedModel.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty model will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public Model intersection(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead()) {
-			if (!canRead(Triple.ANY)) {
-				return holder.getBaseItem().intersection(model);
-			} else {
-				return createCopy().intersection(model);
-			}
+			return canRead(Triple.ANY) ? holder.getBaseItem().intersection(model)
+					:createCopy().intersection(model);
 		}
 		return ModelFactory.createDefaultModel();
 	}
@@ -1352,53 +2055,64 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getBaseItem().isClosed();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then true will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean isEmpty() throws ReadDeniedException, AuthenticationRequiredException {
-		SecuredStatementIterator iter = listStatements();
-		try {
-			return ! iter.hasNext();
-		}
-		finally {
-			iter.close();
-		}
+		return checkSoftRead() ?  ! holder.getBaseItem().contains( holder.getBaseItem().asStatement( Triple.ANY ))
+				: true;
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read all compared triples. Triples that can not be read will
+	 *             not be compared.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then true will be returned if g is empty.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean isIsomorphicWith(final Model g) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead()) {
-			final boolean retval = holder.getBaseItem().isIsomorphicWith(g);
-			if (retval && !canRead(Triple.ANY)) {
-				// in this case we have to check all the items in the graph to see
-				// if the user can read
-				// them all.
-				final ExtendedIterator<Statement> stmtIter = holder.getBaseItem().listStatements();
-				try {
-					while (stmtIter.hasNext()) {
-						if (!canRead(stmtIter.next())) {
-							return false;
-						}
-					}
-				} finally {
-					if (stmtIter != null) {
-						stmtIter.close();
-					}
-				}
+			if (canRead(Triple.ANY))
+			{
+				return holder.getBaseItem().isIsomorphicWith(g);
 			}
-			return retval;
+			return createCopy().isIsomorphicWith(g);
 		}
-		return false;
+		return g.isEmpty();
 	}
 
+	/**
+	 * 
+	 * @sec.graph Read
+	 * @sec.triple Read on s as triple
+	 * @sec.triple Read on at least one set reified statements.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then false will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean isReified(final Statement s) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead() && checkRead(s))
 		{
-			final RSIterator it = listReifiedStatements(s);
-			try {
-				return it.hasNext();
-			} finally {
-				it.close();
-			}
+			return holder.getBaseItem().isReified(s);
 		}
 		return false;
 	}
@@ -1408,42 +2122,118 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		holder.getBaseItem().leaveCriticalSection();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listLiteralStatements(final Resource subject, final Property predicate,
 			final boolean object) throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( ()->holder.getBaseItem().listLiteralStatements(subject, predicate, object));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listLiteralStatements(final Resource subject, final Property predicate,
 			final char object) throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( ()->holder.getBaseItem().listLiteralStatements(subject, predicate, object));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listLiteralStatements(final Resource subject, final Property predicate,
 			final double object) throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( ()->holder.getBaseItem().listLiteralStatements(subject, predicate, object));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listLiteralStatements(final Resource subject, final Property predicate,
 			final float object) throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( ()->holder.getBaseItem().listLiteralStatements(subject, predicate, object));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listLiteralStatements(final Resource subject, final Property predicate,
 			final long object) throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( ()->holder.getBaseItem().listLiteralStatements(subject, predicate, object));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listLiteralStatements(final Resource subject, final Property predicate,
 			final int object) throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( ()->holder.getBaseItem().listLiteralStatements(subject, predicate, object));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public NsIterator listNameSpaces() throws ReadDeniedException, AuthenticationRequiredException {
 		return checkSoftRead() ?  holder.getBaseItem().listNameSpaces() : new NsIteratorImpl( Collections.emptyIterator(), null);
@@ -1457,22 +2247,55 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				nIter = nIter.filterKeep(filter);
 			}
 		} else {
-			nIter = WrappedIterator.emptyIterator();
+			nIter = NiceIterator.emptyIterator();
 		}
 		return new SecuredNodeIterator<>(holder.getSecuredItem(), nIter);		
 	}
 	
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on each RDFNode returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredNodeIterator<RDFNode> listObjects() throws ReadDeniedException, AuthenticationRequiredException {
 		return nodeIterator( ()->holder.getBaseItem().listObjects(), new ObjectFilter());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on each RDFNode returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredNodeIterator<RDFNode> listObjectsOfProperty(final Property p)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return nodeIterator( ()->holder.getBaseItem().listObjectsOfProperty(p),new ObjectFilter(p));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on each RDFNode returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredNodeIterator<RDFNode> listObjectsOfProperty(final Resource s, final Property p)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1484,22 +2307,55 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 	{
 		ExtendedIterator<ReifiedStatement> iter = checkSoftRead() ?
 				supplier.get() :
-					WrappedIterator.emptyIterator();
+					NiceIterator.emptyIterator();
 		return new SecuredRSIterator(holder.getSecuredItem(), iter );
 	}
 	
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on each Reified statement returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredRSIterator listReifiedStatements() throws ReadDeniedException, AuthenticationRequiredException {
 		return reifiedIterator( ()->holder.getBaseItem().listReifiedStatements());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on each Reified statement returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredRSIterator listReifiedStatements(final Statement st)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return reifiedIterator( ()->holder.getBaseItem().listReifiedStatements(st));
 	}
-
 	
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listResourcesWithProperty(final Property p)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1507,6 +2363,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listResourcesWithProperty(final Property p, final boolean o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1514,6 +2382,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 			new ResourceFilter(p, ResourceFactory.createTypedLiteral(o)));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listResourcesWithProperty(final Property p, final char o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1521,6 +2401,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, ResourceFactory.createTypedLiteral(o)));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listResourcesWithProperty(final Property p, final double o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1528,6 +2420,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, ResourceFactory.createTypedLiteral(o)));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listResourcesWithProperty(final Property p, final float o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1535,6 +2439,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, ResourceFactory.createTypedLiteral(o)));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listResourcesWithProperty(final Property p, final long o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1542,6 +2458,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, ResourceFactory.createTypedLiteral(o)));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listResourcesWithProperty(final Property p, final Object o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1549,6 +2477,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, ResourceFactory.createTypedLiteral(o)));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned.
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listResourcesWithProperty(final Property p, final RDFNode o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1556,40 +2496,119 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listStatements() throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( () -> holder.getBaseItem().listStatements() );
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listStatements(final Resource s, final Property p, final RDFNode o)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( () -> holder.getBaseItem().listStatements(s, p, o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listStatements(final Resource subject, final Property predicate,
 			final String object) throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( () -> holder.getBaseItem().listStatements(subject, predicate, object));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listStatements(final Resource subject, final Property predicate,
 			final String object, final String lang) throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( () -> holder.getBaseItem().listStatements(subject, predicate, object, lang));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all triples returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredStatementIterator listStatements(final Selector s)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		return stmtIterator( () -> holder.getBaseItem().listStatements(s));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( s, p, o ) for each resource
+	 *             returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listSubjects() throws ReadDeniedException, AuthenticationRequiredException {
 		return resIterator( ()->holder.getBaseItem().listSubjects(), new ResourceFilter());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listSubjectsWithProperty(final Property p)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1597,6 +2616,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listSubjectsWithProperty(final Property p, final RDFNode o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1604,6 +2635,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listSubjectsWithProperty(final Property p, final String o)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1611,6 +2654,18 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, ResourceFactory.createPlainLiteral(o)));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read at least one Triple( resource, p, o ) for each resource
+	 *             returned
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResIterator listSubjectsWithProperty(final Property p, final String o, final String l)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1618,6 +2673,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				new ResourceFilter(p, ResourceFactory.createLangLiteral(o, l)));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredPrefixMapping lock() throws UpdateDeniedException, AuthenticationRequiredException {
 		checkUpdate();
@@ -1631,17 +2692,43 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then {@code null} will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */	
 	@Override
 	public String qnameFor(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
 		return checkSoftRead()? holder.getBaseItem().qnameFor(uri) : null;
 	}
 	
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty model will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public Model query(final Selector s) throws ReadDeniedException, AuthenticationRequiredException {
 		return checkSoftRead() ? holder.getBaseItem().query(new SecuredSelector(holder.getSecuredItem(), s)) :
 			ModelFactory.createDefaultModel();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel read(final InputStream in, final String base)
 			throws UpdateDeniedException, AuthenticationRequiredException {
@@ -1650,6 +2737,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel read(final InputStream in, final String base, final String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1658,6 +2751,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel read(final Reader reader, final String base)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1666,6 +2765,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel read(final Reader reader, final String base, final String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1674,6 +2779,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel read(final String url) throws ReadDeniedException, AuthenticationRequiredException {
 		checkUpdate();
@@ -1681,6 +2792,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel read(final String url, final String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1689,6 +2806,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel read(final String url, final String base, final String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1700,6 +2823,19 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * Listener will be filtered to only report events that the user can see.
+	 * 
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then listener will not be registered
+	 * but no exception will be thrown
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel register(final ModelChangedListener listener)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -1715,6 +2851,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 				SecuredItem.Util.modelPermissionMsg(getModelNode()));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete on every statement in statements.
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel remove(final List<Statement> statements)
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1728,6 +2872,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete on every statement in baseModel.
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel remove(final Model m)
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1748,6 +2900,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete on Triple( s, p, o )
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel remove(final Resource s, final Property p, final RDFNode o)
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1757,6 +2917,15 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * 
+	 * @sec.graph Update
+	 * @sec.triple Delete on statement.
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel remove(final Statement s)
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1766,6 +2935,15 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * 
+	 * @sec.graph Update
+	 * @sec.triple Delete on every statement in statements.
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel remove(final Statement[] statements)
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1779,6 +2957,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete on every statement in iter.
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel remove(final StmtIterator iter)
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1802,6 +2988,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete on every statement in the securedModel
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel removeAll()
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1838,6 +3032,15 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete on every reification statement for each statement in
+	 *             statements.
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public void removeAllReifications(final Statement s)
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1863,6 +3066,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		}
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel removeNsPrefix(final String prefix)
 			throws UpdateDeniedException, AuthenticationRequiredException {
@@ -1871,6 +3080,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws UpdateDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel clearNsPrefixMap() {
 		checkUpdate();
@@ -1878,6 +3093,15 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete on every reification statement fore each statement in
+	 *             rs.
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public void removeReification(final ReifiedStatement rs)
 			throws UpdateDeniedException, DeleteDeniedException, AuthenticationRequiredException {
@@ -1895,12 +3119,30 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		holder.getBaseItem().removeReification(rs);
 	}
 
+	/**
+	 * @sec.graph Read
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} will be returned
+	 * if the other has no prefix mappings.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean samePrefixMappingAs(final PrefixMapping other)
 			throws ReadDeniedException, AuthenticationRequiredException {
-		return checkSoftRead() ? holder.getBaseItem().samePrefixMappingAs(other) : false;
+		return checkSoftRead() ? holder.getBaseItem().samePrefixMappingAs(other) :
+			other.hasNoMappings();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel setNsPrefix(final String prefix, final String uri)
 			throws UpdateDeniedException, AuthenticationRequiredException {
@@ -1909,6 +3151,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel setNsPrefixes(final Map<String, String> map)
 			throws UpdateDeniedException, AuthenticationRequiredException {
@@ -1917,6 +3165,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel setNsPrefixes(final PrefixMapping other)
 			throws UpdateDeniedException, AuthenticationRequiredException {
@@ -1925,24 +3179,72 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Read
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code uri} will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public String shortForm(final String uri) throws ReadDeniedException, AuthenticationRequiredException {
 		return checkSoftRead() ? holder.getBaseItem().shortForm(uri) : uri;
 	}
 	
+	/**
+	 * @sec.graph Read
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code true} will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
     @Override
     public boolean hasNoMappings() {
         return checkSoftRead() ? holder.getBaseItem().hasNoMappings() : true;
     }
 
+	/**
+	 * @sec.graph Read
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then 0 will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
     @Override
     public int numPrefixes() {
         return checkSoftRead() ? holder.getBaseItem().numPrefixes() : 0;
     }
 
+	/**
+	 * @sec.graph Read
+	 *   
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then 0 will be returned.
+	 * 
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public long size() throws ReadDeniedException, AuthenticationRequiredException {
-		return checkSoftRead() ? holder.getBaseItem().size() : 0;
+		if (checkSoftRead()) {
+			if (canRead( Triple.ANY ) ) {
+				return holder.getBaseItem().size();
+			}
+			return createCopy().size();
+		}
+		return 0;
 	}
 
 	@Override
@@ -1955,17 +3257,26 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getBaseItem().supportsTransactions();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all statements contributed to the union.
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty model will be returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public Model union(final Model model) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead()) {
 			if (canRead(Triple.ANY)) {
 				return holder.getBaseItem().union(model);
-			} else {
-				return createCopy().union(model);
-			}
-		} else {
-			return ModelFactory.createDefaultModel().add( model );
-		}
+			} 
+			return createCopy().union(model);
+		} 
+		return ModelFactory.createDefaultModel().add( model );
 	}
 
 	@Override
@@ -1986,6 +3297,13 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return new Triple(wildCardNode(s.getSubject()), wildCardNode(s.getPredicate()), wildCardNode(s.getObject()));
 	}
 
+	
+	/**
+	 * @sec.graph Update
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel withDefaultMappings(final PrefixMapping map)
 			throws UpdateDeniedException, AuthenticationRequiredException {
@@ -1999,6 +3317,17 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return SecuredResourceImpl.getInstance(holder.getSecuredItem(), holder.getBaseItem().wrapAsResource(n));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all statements that are written.
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then no data will be written.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel write(final OutputStream out) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead()) {
@@ -2012,6 +3341,17 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all statements that are written.
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then no data will be written.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel write(final OutputStream out, final String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -2025,6 +3365,17 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all statements that are written.
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then no data will be written.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel write(final OutputStream out, final String lang, final String base)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -2039,6 +3390,17 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all statements that are written.
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then no data will be written.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel write(final Writer writer) throws ReadDeniedException, AuthenticationRequiredException {
 		if (checkSoftRead()) {
@@ -2051,6 +3413,17 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all statements that are written.
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then no data will be written.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel write(final Writer writer, final String lang)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -2064,6 +3437,17 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on all statements that are written.
+	 *   
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then no data will be written.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredModel write(final Writer writer, final String lang, final String base)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -2078,6 +3462,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	}
 
+	/**
+	 * A private class that filters items resources to only those resources that
+	 * can be seen as subjects in statements. 
+	 */
 	private class ResourceFilter implements Predicate<Resource> {
 		Property p;
 		RDFNode o;
@@ -2107,6 +3495,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
 	}
 
+	/**
+	 * A private class that filters items resources to only those resources that
+	 * can be seen as objects in statements. 
+	 */
 	private class ObjectFilter implements Predicate<RDFNode> {
 		Resource s;
 		Property p;

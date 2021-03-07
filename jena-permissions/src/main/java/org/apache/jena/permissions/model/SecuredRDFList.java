@@ -190,7 +190,7 @@ public interface SecuredRDFList extends RDFList, SecuredResource {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredRDFList copy() throws ReadDeniedException,
+	public RDFList copy() throws ReadDeniedException,
 			AddDeniedException, AuthenticationRequiredException;
 
 	/**

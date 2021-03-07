@@ -78,7 +78,7 @@ public interface SecuredPrefixMapping extends PrefixMapping, SecuredItem {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredPrefixMapping lock() throws ReadDeniedException,
+	public PrefixMapping lock() throws ReadDeniedException,
 			AuthenticationRequiredException;
 
 	/**
@@ -98,7 +98,7 @@ public interface SecuredPrefixMapping extends PrefixMapping, SecuredItem {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredPrefixMapping removeNsPrefix(final String prefix)
+	public PrefixMapping removeNsPrefix(final String prefix)
 			throws ReadDeniedException, AuthenticationRequiredException;
 
 	/**
@@ -118,7 +118,7 @@ public interface SecuredPrefixMapping extends PrefixMapping, SecuredItem {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredPrefixMapping setNsPrefix(final String prefix,
+	public PrefixMapping setNsPrefix(final String prefix,
 			final String uri) throws UpdateDeniedException,
 			AuthenticationRequiredException;
 
@@ -129,7 +129,7 @@ public interface SecuredPrefixMapping extends PrefixMapping, SecuredItem {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredPrefixMapping setNsPrefixes(final Map<String, String> map)
+	public PrefixMapping setNsPrefixes(final Map<String, String> map)
 			throws UpdateDeniedException, AuthenticationRequiredException;
 
 	/**
@@ -139,7 +139,7 @@ public interface SecuredPrefixMapping extends PrefixMapping, SecuredItem {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredPrefixMapping setNsPrefixes(final PrefixMapping other)
+	public PrefixMapping setNsPrefixes(final PrefixMapping other)
 			throws UpdateDeniedException, AuthenticationRequiredException;
 
 	/**
@@ -159,7 +159,7 @@ public interface SecuredPrefixMapping extends PrefixMapping, SecuredItem {
 	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
-	public SecuredPrefixMapping withDefaultMappings(final PrefixMapping map)
+	public PrefixMapping withDefaultMappings(final PrefixMapping map)
 			throws UpdateDeniedException, AuthenticationRequiredException;
 
 }
