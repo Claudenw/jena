@@ -18,6 +18,7 @@
 package org.apache.jena.permissions.impl;
 
 import java.lang.reflect.Proxy;
+import java.util.Iterator;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -548,53 +549,77 @@ public abstract class SecuredItemImpl implements SecuredItem {
 		checkCreate(new Triple(n, RDF.object.asNode(), t.getObject()));
 	}
 
+//	/**
+//	 * Check that all the triples can be created.
+//	 * 
+//	 * @param FrontsTripleIter
+//	 *            an iterator of FrontsTriple objects.
+//	 * @throws AddDeniedException
+//	 *             if a triple can not be added.
+//	 * @throws AuthenticationRequiredException
+//	 *             if user is not authenticated and is required to be.
+//	 */
+//	protected void checkCreateFrontsTriples(
+//			final ExtendedIterator<? extends FrontsTriple> FrontsTripleIter)
+//			throws AddDeniedException, AuthenticationRequiredException {
+//		if (!canCreate(Triple.ANY)) {
+//			try {
+//				while (FrontsTripleIter.hasNext()) {
+//					checkCreate(FrontsTripleIter.next());
+//				}
+//			} finally {
+//				FrontsTripleIter.close();
+//			}
+//		}
+//	}
+
+//	/**
+//	 * Check that all the triples can be created.
+//	 * 
+//	 * @param triples
+//	 *            an iterator of triples.
+//	 * @throws AddDeniedException
+//	 *             if a triple can not be added.
+//	 * @throws AuthenticationRequiredException
+//	 *             if user is not authenticated and is required to be.
+//	 */
+//	protected void checkCreateTriples(final ExtendedIterator<Triple> triples)
+//			throws AddDeniedException, AuthenticationRequiredException {
+//		if (!canCreate(Triple.ANY)) {
+//			try {
+//				while (triples.hasNext()) {
+//					checkCreate(triples.next());
+//				}
+//			} finally {
+//				triples.close();
+//			}
+//		}
+//	}
+
 	/**
 	 * Check that all the triples can be created.
 	 * 
-	 * @param FrontsTripleIter
-	 *            an iterator of FrontsTriple objects.
+	 * @param supplier the Suplier of the triple iterator.
 	 * @throws AddDeniedException
 	 *             if a triple can not be added.
 	 * @throws AuthenticationRequiredException
 	 *             if user is not authenticated and is required to be.
 	 */
-	protected void checkCreateFrontsTriples(
-			final ExtendedIterator<? extends FrontsTriple> FrontsTripleIter)
+	protected void checkCreate(Supplier<ExtendedIterator<Triple>> supplier)
 			throws AddDeniedException, AuthenticationRequiredException {
 		if (!canCreate(Triple.ANY)) {
+			ExtendedIterator<Triple> iter = supplier.get();
 			try {
-				while (FrontsTripleIter.hasNext()) {
-					checkCreate(FrontsTripleIter.next());
+				while (iter.hasNext()) {
+					checkCreate(iter.next());
 				}
 			} finally {
-				FrontsTripleIter.close();
+				iter.close();
 			}
 		}
 	}
 
-	/**
-	 * Check that all the triples can be created.
-	 * 
-	 * @param triples
-	 *            an iterator of triples.
-	 * @throws AddDeniedException
-	 *             if a triple can not be added.
-	 * @throws AuthenticationRequiredException
-	 *             if user is not authenticated and is required to be.
-	 */
-	protected void checkCreateTriples(final ExtendedIterator<Triple> triples)
-			throws AddDeniedException, AuthenticationRequiredException {
-		if (!canCreate(Triple.ANY)) {
-			try {
-				while (triples.hasNext()) {
-					checkCreate(triples.next());
-				}
-			} finally {
-				triples.close();
-			}
-		}
-	}
-
+	
 	/**
 	 * check that delete on the securedModel is allowed,
 	 * 

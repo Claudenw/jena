@@ -200,8 +200,8 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	 * @sec.graph Read
 	 * @sec.triple Read, otherwise filtered from iterator.
 	 * 
-	 * if {@link SecurityEvaluator#isHardReadError()} is true then
-	 * an empty iterator will be returned.
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
 	 * 
 	 * @throws ReadDeniedException on read not allowed
 	 * @throws AuthenticationRequiredException
@@ -218,8 +218,8 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
 	 * @sec.graph Read
 	 * @sec.triple Read, otherwise filtered from iterator.
 	 * 
-	 * if {@link SecurityEvaluator#isHardReadError()} is true then
-	 * an empty iterator will be returned.
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator will be returned.
 	 * 
 	 * @throws ReadDeniedException
 	 * @throws AuthenticationRequiredException

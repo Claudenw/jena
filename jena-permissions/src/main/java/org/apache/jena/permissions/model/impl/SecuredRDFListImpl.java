@@ -159,14 +159,14 @@ public class SecuredRDFListImpl extends SecuredResourceImpl implements
 	}
 
 	@Override
-	public SecuredRDFList append(final Iterator<? extends RDFNode> nodes)
+	public RDFList append(final Iterator<? extends RDFNode> nodes)
 			throws ReadDeniedException, AuthenticationRequiredException {
 		SecuredRDFList copy = copy();
 		if (nodes.hasNext()) {
 			if (((RDFList) copy.getBaseItem()).size() > 0) {
 				copy.concatenate(copy.getModel().createList(nodes));
 			} else {
-				copy = copy.getModel().createList(nodes);
+				copy = (SecuredRDFList)copy.getModel().createList(nodes);
 			}
 		}
 		return copy;
@@ -373,12 +373,12 @@ public class SecuredRDFListImpl extends SecuredResourceImpl implements
 					Action.Read).mapWith(
 					list -> list.getRequiredProperty(listFirst()).getObject());
 			if (iter.hasNext()) {
-				retval = getModel().createList(iter);
+				retval = (SecuredRDFList)getModel().createList(iter);
 			} else {
-				retval = getModel().createList();
+				retval = (SecuredRDFList)getModel().createList();
 			}
 		} else {
-			retval = getModel().createList();
+			retval = (SecuredRDFList)getModel().createList();
 		}
 		return retval;
 	}

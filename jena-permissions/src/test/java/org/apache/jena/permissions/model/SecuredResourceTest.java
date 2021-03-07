@@ -32,6 +32,7 @@ import org.apache.jena.permissions.model.impl.SecuredResourceImpl;
 import org.apache.jena.permissions.model.impl.SecuredStatementIterator;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
@@ -252,7 +253,7 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 	@Test
 	public void testAnonFuncs() {
 
-		final SecuredResource anonResource = securedModel.createResource();
+		final SecuredResource anonResource = (SecuredResource)securedModel.createResource();
 		setSecuredRDFNode(anonResource, null);
 
 		try {
