@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import org.apache.jena.enhanced.UnsupportedPolymorphismException;
 import org.apache.jena.graph.FrontsNode;
 import org.apache.jena.graph.Node;
-import org.apache.jena.permissions.SecuredItem;
 import org.apache.jena.permissions.impl.ItemHolder;
 import org.apache.jena.permissions.impl.SecuredItemImpl;
 import org.apache.jena.permissions.model.SecuredModel;
@@ -51,9 +50,8 @@ public abstract class SecuredRDFNodeImpl extends SecuredItemImpl implements Secu
 	public static SecuredRDFNode getInstance(final SecuredModel securedModel, final RDFNode rdfNode) {
 		if (rdfNode instanceof Literal) {
 			return SecuredLiteralImpl.getInstance(securedModel, (Literal) rdfNode);
-		} else {
-			return SecuredResourceImpl.getInstance(securedModel, (Resource) rdfNode);
-		}
+		} 
+		return SecuredResourceImpl.getInstance(securedModel, (Resource) rdfNode);
 	}
 
 	// the item holder that contains this SecuredRDFNode
@@ -81,6 +79,12 @@ public abstract class SecuredRDFNodeImpl extends SecuredItemImpl implements Secu
 		this.holder = holder;
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends RDFNode> T as(final Class<T> view)
@@ -109,12 +113,24 @@ public abstract class SecuredRDFNodeImpl extends SecuredItemImpl implements Secu
 		}
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public Node asNode() throws ReadDeniedException, AuthenticationRequiredException {
 		checkRead();
 		return holder.getBaseItem().asNode();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public <T extends RDFNode> boolean canAs(final Class<T> view)
 			throws AuthenticationRequiredException {
@@ -148,6 +164,12 @@ public abstract class SecuredRDFNodeImpl extends SecuredItemImpl implements Secu
 		return securedModel;
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public RDFNode inModel(final Model m) throws ReadDeniedException, AuthenticationRequiredException {
 		checkRead();

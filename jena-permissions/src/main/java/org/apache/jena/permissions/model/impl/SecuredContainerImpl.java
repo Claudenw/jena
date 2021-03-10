@@ -20,17 +20,20 @@ package org.apache.jena.permissions.model.impl;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.permissions.SecurityEvaluator;
 import org.apache.jena.permissions.SecurityEvaluator.Action;
 import org.apache.jena.permissions.impl.ItemHolder;
 import org.apache.jena.permissions.impl.SecuredItemInvoker;
 import org.apache.jena.permissions.model.SecuredContainer;
 import org.apache.jena.permissions.model.SecuredModel;
+import org.apache.jena.permissions.model.SecuredStatement;
 import org.apache.jena.permissions.utils.ContainerFilter;
 import org.apache.jena.permissions.utils.PermStatementFilter;
 import org.apache.jena.rdf.model.*;
@@ -121,42 +124,98 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 		return holder.getBaseItem().getModel().createLiteral(o, l);
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final boolean o) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
-		return add(asObject(o));
+		return add(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final char o) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
-		return add(asObject(o));
+		return add(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final double o) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
-		return add(asObject(o));
+		return add(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final float o) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
-		return add(asObject(o));
+		return add(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final long o) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
-		return add(asObject(o));
+		return add(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final Object o) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
-		return add(asObject(o));
+		return add(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final RDFNode o) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
@@ -167,12 +226,28 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final String o) throws AddDeniedException,
 			UpdateDeniedException, AuthenticationRequiredException {
-		return add(asLiteral(o, ""));
+		return add(o, "");
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer add(final String o, final String l)
 			throws AddDeniedException, UpdateDeniedException,
@@ -180,6 +255,14 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 		return add(asLiteral(o, l));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Create SecTriple( this, RDF.li, o );
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	protected void checkAdd(final int pos, final Literal literal)
 			throws AddDeniedException, UpdateDeniedException,
 			AuthenticationRequiredException {
@@ -193,46 +276,124 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 				.asNode(), node));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final boolean o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		return contains(asObject(o));
+		return contains(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final char o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		return contains(asObject(o));
+		return contains(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final double o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		return contains(asObject(o));
+		return contains(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final float o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		return contains(asObject(o));
+		return contains(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final long o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		return contains(asObject(o));
+		return contains(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final Object o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		return contains(asObject(o));
+		return contains(String.valueOf(o));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final RDFNode o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		// iterator check reads
+		// iterator checks reads
+		List<RDFNode> lst = iterator().toList();
 		final SecuredNodeIterator<RDFNode> iter = iterator();
 		while (iter.hasNext()) {
 			if (iter.next().asNode().equals(o.asNode())) {
@@ -242,12 +403,34 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 		return false;
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final String o) throws ReadDeniedException,
 			AuthenticationRequiredException {
-		return contains(asLiteral(o, ""));
+		return contains(o, "");
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple( this, RDF.li, o );
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then @{code false} is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean contains(final String o, final String l)
 			throws ReadDeniedException, AuthenticationRequiredException {
@@ -308,11 +491,24 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 		return holder.getBaseItem().isSeq();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read on each triple ( this, rdf:li_? node ) returned by
+	 *             iterator;
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredNodeIterator<RDFNode> iterator() {
 		// listProperties calls checkRead();
 		SecuredStatementIterator iter = listProperties();
 		try {
+			//List<Statement> ls = iter.toList();
 			SortedSet<Statement> result = new TreeSet<>(
 					new ContainerComparator());
 			while (iter.hasNext()) {
@@ -329,8 +525,21 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 		}
 	}
 
-	@Override
-	public SecuredNodeIterator<RDFNode> iterator(final Set<Action> perms) {
+	/**
+	 * @param perms
+	 *            the Permissions required on each node returned
+	 * @sec.graph Read
+	 * @sec.triple Read + perms on each triple ( this, rdf:li_? node ) returned
+	 *             by iterator;
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an empty iterator is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */	
+	protected SecuredNodeIterator<RDFNode> iterator(final Set<Action> perms) {
 		checkRead();
 		final Set<Action> permsCopy = new HashSet<>(perms);
 		permsCopy.add(Action.Read);
@@ -340,6 +549,14 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Delete s as triple;
+	 * @throws UpdateDeniedException
+	 * @throws DeleteDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredContainer remove(final Statement s)
 			throws UpdateDeniedException, DeleteDeniedException,
@@ -350,6 +567,12 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 		return holder.getSecuredItem();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public int size() throws ReadDeniedException,
 			AuthenticationRequiredException {

@@ -55,7 +55,7 @@ public class SecuredRDFNodeTest {
 	}
 
 	protected RDFNode getBaseRDFNode() {
-		return baseRDFNode;
+		return baseRDFNode.inModel( baseModel );
 	}
 
 	protected SecuredRDFNode getSecuredRDFNode() {
@@ -67,6 +67,10 @@ public class SecuredRDFNodeTest {
 		this.baseRDFNode = baseRDFNode;
 	}
 
+	protected boolean shouldRead() {
+		return securityEvaluator.evaluate(Action.Read) || !securityEvaluator.isHardReadError();
+	}
+	
 	@Before
 	public void setup() {
 		baseModel = createModel();
