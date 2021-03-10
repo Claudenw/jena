@@ -17,6 +17,7 @@
  */
 package org.apache.jena.permissions.model.impl;
 
+import org.apache.jena.datatypes.DatatypeFormatException;
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.permissions.impl.ItemHolder;
@@ -106,12 +107,18 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 	public SecuredResource asResource() {
 		if (canRead()) {
 			throw new ResourceRequiredException(asNode());
-		} else {
-			throw new ResourceRequiredException(
-					NodeFactory.createLiteral("Can not read"));
 		}
+		throw new ResourceRequiredException(
+					NodeFactory.createLiteral("Can not read"));
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws DatatypeFormatException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean getBoolean() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -119,6 +126,13 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getBoolean();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws DatatypeFormatException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public byte getByte() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -126,6 +140,13 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getByte();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws DatatypeFormatException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public char getChar() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -134,8 +155,10 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 	}
 
 	/**
-	 * Return the datatype of the literal. This will be null in the case of
-	 * plain literals.
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
 	public RDFDatatype getDatatype() throws ReadDeniedException,
@@ -145,8 +168,10 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 	}
 
 	/**
-	 * Return the uri of the datatype of the literal. This will be null in the
-	 * case of plain literals.
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
 	public String getDatatypeURI() throws ReadDeniedException,
@@ -155,6 +180,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getDatatypeURI();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public double getDouble() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -162,6 +193,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getDouble();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public float getFloat() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -169,6 +206,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getFloat();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public int getInt() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -176,6 +219,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getInt();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public String getLanguage() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -184,7 +233,10 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 	}
 
 	/**
-	 * Return the lexical form of the literal.
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
 	public String getLexicalForm() throws ReadDeniedException,
@@ -193,6 +245,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getLexicalForm();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public long getLong() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -200,6 +258,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getLong();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public short getShort() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -207,6 +271,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getShort();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public String getString() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -228,6 +298,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 		return holder.getBaseItem().getValue();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public Literal inModel(final Model m) throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -236,6 +312,12 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 				holder.getBaseItem().getDatatype());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean isWellFormedXML() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -244,11 +326,10 @@ public class SecuredLiteralImpl extends SecuredRDFNodeImpl implements
 	}
 
 	/**
-	 * Test that two literals are semantically equivalent. In some cases this
-	 * may be the same as equals, in others equals is stricter. For example,
-	 * two xsd:int literals with the same value but different language tag are
-	 * semantically equivalent but distinguished by the java equality function
-	 * in order to support round tripping.
+	 * @sec.graph Read
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
 	 */
 	@Override
 	public boolean sameValueAs(final Literal other) throws ReadDeniedException,

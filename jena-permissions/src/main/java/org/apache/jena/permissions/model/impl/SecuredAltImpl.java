@@ -271,14 +271,12 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 				checkUpdate(t, t2);
 				stmt.changeObject(o);
 				return holder.getSecuredItem();
-			} else {
-				add(o);
-				return holder.getSecuredItem();
-			}
+			} 
+			add(o);
+			return holder.getSecuredItem();
 		} finally {
 			iter.close();
 		}
-
 	}
 
 	@Override
