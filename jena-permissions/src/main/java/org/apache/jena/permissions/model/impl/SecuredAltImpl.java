@@ -18,6 +18,7 @@
 package org.apache.jena.permissions.model.impl;
 
 import org.apache.jena.graph.Triple;
+import org.apache.jena.permissions.SecurityEvaluator;
 import org.apache.jena.permissions.SecurityEvaluator.Action;
 import org.apache.jena.permissions.impl.ItemHolder;
 import org.apache.jena.permissions.impl.SecuredItemInvoker;
@@ -29,6 +30,7 @@ import org.apache.jena.permissions.model.SecuredRDFNode;
 import org.apache.jena.permissions.model.SecuredResource;
 import org.apache.jena.permissions.model.SecuredSeq;
 import org.apache.jena.rdf.model.*;
+import org.apache.jena.shared.AddDeniedException;
 import org.apache.jena.shared.AuthenticationRequiredException;
 import org.apache.jena.shared.ReadDeniedException;
 import org.apache.jena.shared.UpdateDeniedException;
@@ -87,6 +89,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		this.holder = holder;
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredRDFNode getDefault() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -95,6 +108,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 				.getObject());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt getDefaultAlt() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -103,6 +127,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 				.getAlt());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredBag getDefaultBag() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -111,6 +146,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 				.getBag());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public boolean getDefaultBoolean() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -118,6 +164,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		return getDefaultStatement().getBoolean();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public byte getDefaultByte() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -125,6 +182,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		return getDefaultStatement().getByte();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public char getDefaultChar() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -132,6 +200,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		return getDefaultStatement().getChar();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public double getDefaultDouble() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -139,6 +218,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		return getDefaultStatement().getDouble();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public float getDefaultFloat() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -146,6 +236,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		return getDefaultStatement().getFloat();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public int getDefaultInt() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -153,6 +254,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		return getDefaultStatement().getInt();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public String getDefaultLanguage() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -160,6 +272,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		return getDefaultStatement().getLanguage();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredLiteral getDefaultLiteral() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -168,6 +291,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 				.getLiteral());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public long getDefaultLong() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -175,6 +309,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		return getDefaultStatement().getLong();
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredResource getDefaultResource() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -183,6 +328,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 				getDefaultStatement().getResource());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredSeq getDefaultSeq() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -191,6 +347,17 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 				.getSeq());
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public short getDefaultShort() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -199,20 +366,44 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	private Statement getDefaultStatement() throws ReadDeniedException,
 			AuthenticationRequiredException {
-		checkRead();
-		final ExtendedIterator<Statement> iter = getStatementIterator(Action.Read);
-		try {
-			if (iter.hasNext()) {
-				return iter.next();
+		if (checkSoftRead()) {
+			ExtendedIterator<Statement> iter = getStatementIterator(Action.Read);
+			try {
+				if (iter.hasNext()) {
+					return iter.next();
+				}
+			} finally {
+				iter.close();
 			}
-			throw new AltHasNoDefaultException(this);
-		} finally {
-			iter.close();
+			
 		}
+		throw new AltHasNoDefaultException(this);
 	}
 
+	/**
+	 * @sec.graph Read
+	 * @sec.triple Read SecTriple(this, RDF.li(1), o )
+	 * 
+	 * if {@link SecurityEvaluator#isHardReadError()} is true and the 
+	 * user does not have read access then an AltHasNoDefaultException is returned.
+	 * 
+	 * @throws ReadDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public String getDefaultString() throws ReadDeniedException,
 			AuthenticationRequiredException {
@@ -221,48 +412,118 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final boolean o) throws UpdateDeniedException,
 			AuthenticationRequiredException {
 		return setDefault(asObject(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final char o) throws UpdateDeniedException,
 			AuthenticationRequiredException {
 		return setDefault(asObject(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final double o) throws UpdateDeniedException,
 			AuthenticationRequiredException {
 		return setDefault(asObject(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final float o) throws UpdateDeniedException,
 			AuthenticationRequiredException {
 		return setDefault(asObject(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final long o) throws UpdateDeniedException,
 			AuthenticationRequiredException {
 		return setDefault(asObject(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final Object o) throws UpdateDeniedException,
 			AuthenticationRequiredException {
 		return setDefault(asObject(o));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final RDFNode o) throws UpdateDeniedException,
 			AuthenticationRequiredException {
 		checkUpdate();
-		final ExtendedIterator<Statement> iter = getStatementIterator(Action.Read);
-		try {
+		ExtendedIterator<Statement> iter = getStatementIterator(Action.Read);
+		try  {
 			if (iter.hasNext()) {
 				final Statement stmt = iter.next();
 				final Triple t = stmt.asTriple();
@@ -279,12 +540,32 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
 		}
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final String o) throws UpdateDeniedException,
 			AuthenticationRequiredException {
 		return setDefault(asLiteral(o, ""));
 	}
 
+	/**
+	 * @sec.graph Update
+	 * @sec.triple Update SecTriple(this, RDF.li(1), existing ), SecTriple(this,
+	 *             RDF.li(1), o )
+	 * @sec.triple Create SecTriple(this, RDF.li(1), o ) if no current default
+	 * @throws UpdateDeniedException
+	 * @throws AddDeniedException
+	 * @throws AuthenticationRequiredException
+	 *             if user is not authenticated and is required to be.
+	 */
 	@Override
 	public SecuredAlt setDefault(final String o, final String l)
 			throws UpdateDeniedException, AuthenticationRequiredException {
