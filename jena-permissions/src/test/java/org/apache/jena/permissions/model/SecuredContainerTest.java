@@ -44,6 +44,8 @@ import org.junit.runner.RunWith;
 @RunWith(value = SecurityEvaluatorParameters.class)
 public class SecuredContainerTest extends SecuredResourceTest {
 
+	protected Container baseContainer;
+	
 	public SecuredContainerTest(final MockSecurityEvaluator securityEvaluator) {
 		super(securityEvaluator);
 	}
@@ -51,18 +53,17 @@ public class SecuredContainerTest extends SecuredResourceTest {
 	private SecuredContainer getSecuredContainer() {
 		return (SecuredContainer) getSecuredRDFNode();
 	}
-
+	
 	@Override
 	@Before
 	public void setup() {
 		super.setup();
-		final Container container = baseModel.createBag(SecuredRDFNodeTest.s.getURI());
-		container.add("SomeDummyItem");
-		setSecuredRDFNode(SecuredContainerImpl.getInstance(securedModel, container), container);
+		Container baseContainer = baseModel.createBag(SecuredRDFNodeTest.s.getURI());
+		setSecuredRDFNode(SecuredContainerImpl.getInstance(securedModel, baseContainer), baseContainer);
 	}
 
 	@Test
-	public void test() {
+	public void testSize() {
 		try {
 			getSecuredContainer().size();
 			if (!securityEvaluator.evaluate(Action.Read)) {
@@ -253,6 +254,7 @@ public class SecuredContainerTest extends SecuredResourceTest {
 
 	@Test
 	public void testIterator() {
+		getBaseRDFNode().as( Container.class ).add( "SomeItem" );
 		try {
 			NodeIterator iter = getSecuredContainer().iterator();
 			if (!shouldRead()) {
@@ -274,6 +276,8 @@ public class SecuredContainerTest extends SecuredResourceTest {
 
 	@Test
 	public void testRemove() {
+		getBaseRDFNode().as( Container.class ).add( "SomeItem" );
+
 		final Set<Action> perms = SecurityEvaluator.Util.asSet(new Action[] { Action.Update, Action.Delete });
 		final Statement s = baseModel.listStatements().next();
 		try {

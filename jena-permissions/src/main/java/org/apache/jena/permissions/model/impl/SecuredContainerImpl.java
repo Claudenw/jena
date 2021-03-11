@@ -111,17 +111,27 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 			final ItemHolder<? extends Container, ? extends SecuredContainer> holder) {
 		super(securedModel, holder);
 		this.holder = holder;
-		// listener=new ChangeListener();
-		// holder.getBaseItem().getModel().register(listener);
 	}
 
+	/**
+	 * Returns the Object as an RDFNode.  
+	 * If it is a node return it otherwise convert it as a literal
+	 * @param o the object to convert.
+	 * @return an RDFNode
+	 */
 	protected RDFNode asObject(Object o) {
 		return o instanceof RDFNode ? (RDFNode) o : ResourceFactory
 				.createTypedLiteral(o);
 	}
 
-	protected RDFNode asLiteral(String o, String l) {
-		return holder.getBaseItem().getModel().createLiteral(o, l);
+	/**
+	 * Create an RDFNode (Literal) from a string value and language.
+	 * @param value the value
+	 * @param language the language
+	 * @return a Literal RDFNode.
+	 */
+	protected RDFNode asLiteral(String value, String language) {
+		return holder.getBaseItem().getModel().createLiteral(value, language);
 	}
 
 	/**
@@ -393,14 +403,17 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 	public boolean contains(final RDFNode o) throws ReadDeniedException,
 			AuthenticationRequiredException {
 		// iterator checks reads
-		List<RDFNode> lst = iterator().toList();
 		final SecuredNodeIterator<RDFNode> iter = iterator();
-		while (iter.hasNext()) {
-			if (iter.next().asNode().equals(o.asNode())) {
-				return true;
+		try {
+			while (iter.hasNext()) {
+				if (iter.next().asNode().equals(o.asNode())) {
+					return true;
+				}
 			}
+			return false;
+		} finally {
+			iter.close();
 		}
-		return false;
 	}
 
 	/**
@@ -463,12 +476,24 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements
 		return -1;
 	}
 
+	/**
+	 * An iterator of statements that have predicates that start with '_' followed 
+	 * by a number and for which the user has the specified permission.
+	 * @param perm the permission to check 
+	 * @return an ExtendedIterator of statements.
+	 */
 	protected ExtendedIterator<Statement> getStatementIterator(final Action perm) {
 		return holder.getBaseItem().listProperties()
 				.filterKeep(new ContainerFilter())
 				.filterKeep(new PermStatementFilter(perm, this));
 	}
 
+	/**
+	 * An iterator of statements that have predicates that start with '_' followed 
+	 * by a number and for which the user has the specified permissions.
+	 * @param perm the permissions to check 
+	 * @return an ExtendedIterator of statements.
+	 */
 	protected ExtendedIterator<Statement> getStatementIterator(
 			final Set<Action> perm) {
 		return holder.getBaseItem().listProperties()

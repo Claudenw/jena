@@ -23,6 +23,11 @@ import org.apache.jena.rdf.model.Property ;
 import org.apache.jena.rdf.model.Statement ;
 import org.apache.jena.vocabulary.RDF ;
 
+/**
+ * A Predicate that filters out all predicates that do not start with '_' followed
+ * by an integer.
+ *
+ */
 public class ContainerFilter implements Predicate<Statement>
 {
 
