@@ -21,6 +21,7 @@ import org.apache.jena.permissions.MockSecurityEvaluator;
 import org.apache.jena.permissions.SecurityEvaluatorParameters;
 import org.apache.jena.permissions.model.impl.SecuredBagImpl;
 import org.apache.jena.rdf.model.Bag;
+import org.apache.jena.rdf.model.Container;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
@@ -35,8 +36,7 @@ public class SecuredBagTest extends SecuredContainerTest {
 	@Before
 	public void setup() {
 		super.setup();
-		final Bag bag = baseModel.getBag("http://example.com/testContainer");
-		bag.add("SomeDummyItem");
+		Bag bag = baseModel.createBag(SecuredRDFNodeTest.s.getURI());
 		setSecuredRDFNode(SecuredBagImpl.getInstance(securedModel, bag), bag);
 	}
 

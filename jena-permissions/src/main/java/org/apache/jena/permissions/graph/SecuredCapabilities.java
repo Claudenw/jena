@@ -17,7 +17,7 @@
  */
 package org.apache.jena.permissions.graph;
 
-import org.apache.jena.graph.Capabilities ;
+import org.apache.jena.graph.Capabilities;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.permissions.SecurityEvaluator;
@@ -27,14 +27,13 @@ import org.apache.jena.permissions.SecurityEvaluator.Action;
  * The interface for secured Capabilities instances.
  *
  */
-public class SecuredCapabilities implements Capabilities
-{
-	// the security evaluator in use
-	private final SecurityEvaluator securityEvaluator;
-	// the graphIRI that the capabilities belong to.
-	private final Node graphIRI;
-	// the unsecured capabilities.
-	private final Capabilities capabilities;
+public class SecuredCapabilities implements Capabilities {
+    // the security evaluator in use
+    private final SecurityEvaluator securityEvaluator;
+    // the graphIRI that the capabilities belong to.
+    private final Node graphIRI;
+    // the unsecured capabilities.
+    private final Capabilities capabilities;
 
 	/**
 	 * Constructor.
@@ -54,15 +53,14 @@ public class SecuredCapabilities implements Capabilities
 		this.capabilities = capabilities;
 	}
 
-	/**
-	 * @sec.graph Update
-	 */
-	@Override
-	public boolean addAllowed()
-	{
-		return securityEvaluator.evaluate(securityEvaluator.getPrincipal(), Action.Update, graphIRI)
-				&& capabilities.addAllowed();
-	}
+    /**
+     * @sec.graph Update
+     */
+    @Override
+    public boolean addAllowed() {
+        return securityEvaluator.evaluate(securityEvaluator.getPrincipal(), Action.Update, graphIRI)
+                && capabilities.addAllowed();
+    }
 
 	/**
 	 * @sec.graph Update
@@ -80,9 +78,8 @@ public class SecuredCapabilities implements Capabilities
 	    return capabilities.handlesLiteralTyping();
 	}
 
-	@Override
-	public boolean sizeAccurate()
-	{
-		return capabilities.sizeAccurate();
-	}
+        @Override
+    public boolean sizeAccurate() {
+        return capabilities.sizeAccurate();
+    }
 }

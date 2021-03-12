@@ -24,8 +24,8 @@ import org.apache.jena.permissions.SecuredItem;
  * The interface for secured Graph instances.
  *
  * Use the SecuredGraph.Factory to create instances
+ *
  * 
- *  
  * {@link org.apache.jena.permissions.graph.implSecuredGraphImpl} for javadocs
  */
 public interface SecuredGraph extends Graph, SecuredItem {
