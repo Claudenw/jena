@@ -85,13 +85,11 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read - if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
      * 
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -103,12 +101,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -121,12 +117,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read - if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -139,12 +133,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read - if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -157,12 +149,11 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read - if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -175,12 +166,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -193,12 +182,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -211,12 +198,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -229,12 +214,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -247,12 +230,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -265,12 +246,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -283,12 +262,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -301,12 +278,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -319,12 +294,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -337,12 +310,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -356,12 +327,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
@@ -383,12 +352,10 @@ public class SecuredAltImpl extends SecuredContainerImpl implements SecuredAlt {
     }
 
     /**
-     * @sec.graph Read
-     * @sec.triple Read SecTriple(this, RDF.li(1), o )
-     * 
-     *             if {@link SecurityEvaluator#isHardReadError()} is true and the
+     * @sec.graph Read -if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an AltHasNoDefaultException
      *             is returned.
+     * @sec.triple Read SecTriple(this, RDF.li(1), o )
      * 
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is

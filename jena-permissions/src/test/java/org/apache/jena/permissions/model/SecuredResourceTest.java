@@ -59,6 +59,10 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 		return (SecuredResource) getSecuredRDFNode();
 	}
 	
+	private Resource getBaseResource() {
+	    return  (Resource) getBaseRDFNode();
+	}
+	
 
 	@Override
 	@Before
@@ -320,24 +324,23 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 
 	@Test
 	public void testGetProperty() {
-		try {
-			Statement actual = getSecuredResource().getProperty(SecuredRDFNodeTest.p);
-			if (!shouldRead()) {
-				Assert.fail("Should have thrown ReadDeniedException Exception");
-			}
-			if (securityEvaluator.evaluate(Action.Read)) {
-				assertEquals( 
-						new Triple( SecuredRDFNodeTest.s.asNode(), SecuredRDFNodeTest.p.asNode(), SecuredRDFNodeTest.o.asNode()),
-						actual.asTriple() );
-			} else {
-				assertNull( actual );
-			}
-		} catch (final ReadDeniedException e) {
-			if (shouldRead()) {
-				Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
+	    
+        try {
+            Statement actual = getSecuredResource().getProperty(SecuredRDFNodeTest.p);
+            if (!shouldRead()) {
+                Assert.fail("Should have thrown ReadDeniedException Exception");
+            }
+            if (securityEvaluator.evaluate(Action.Read)) {
+                assertEquals( new Triple( getBaseRDFNode().asNode(), SecuredRDFNodeTest.p.asNode(), SecuredRDFNodeTest.o.asNode()), actual.asTriple() );
+            } else {
+                assertNull( actual );
+            }
+        } catch (final ReadDeniedException e) {
+            if (shouldRead()) {
+                Assert.fail("Should not have thrown ReadDeniedException Exception");
+            }
+        }
+
 
 		try {
 			Resource actual = getSecuredResource().getPropertyResourceValue(SecuredRDFNodeTest.p);
@@ -500,12 +503,12 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 		testHasProperty( ()->getSecuredResource().hasLiteral(SecuredRDFNodeTest.p2, o), false );
 		
 		Model m = getBaseRDFNode().getModel();
-		m.addLiteral(s, p, true);
-		m.addLiteral(s, p, 'c');
-		m.addLiteral(s, p, 3.14d);
-		m.addLiteral(s, p, 3.14f);
-		m.addLiteral(s, p, 6l);
-		m.addLiteral(s, p2, m.createTypedLiteral(o));
+		m.addLiteral(getBaseResource(), p, true);
+		m.addLiteral(getBaseResource(), p, 'c');
+		m.addLiteral(getBaseResource(), p, 3.14d);
+		m.addLiteral(getBaseResource(), p, 3.14f);
+		m.addLiteral(getBaseResource(), p, 6l);
+		m.addLiteral(getBaseResource(), p2, m.createTypedLiteral(o));
 
 		testHasProperty( ()->getSecuredResource().hasLiteral(SecuredRDFNodeTest.p, true), true );
 		testHasProperty( ()->getSecuredResource().hasLiteral(SecuredRDFNodeTest.p, 'c'), true);
@@ -539,7 +542,7 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 	@Test
 	public void testHasProperty() {
 		Model m = getBaseRDFNode().getModel();
-		m.addLiteral(s, p, m.createLiteral("yeehaw"));
+		m.addLiteral(getBaseRDFNode().asResource(), p, m.createLiteral("yeehaw"));
 		testHasProperty( ()->getSecuredResource().hasProperty(SecuredRDFNodeTest.p), true);
 		testHasProperty( ()->getSecuredResource().hasProperty(SecuredRDFNodeTest.p, SecuredRDFNodeTest.o), true );
 		testHasProperty( ()->getSecuredResource().hasProperty(SecuredRDFNodeTest.p, "yeehaw"), true );

@@ -71,15 +71,17 @@ public class SecuredRDFNodeTest {
 		return securityEvaluator.evaluate(Action.Read) || !securityEvaluator.isHardReadError();
 	}
 	
+	protected void addSPO(Resource node) {
+        baseModel.add(node, SecuredRDFNodeTest.p, SecuredRDFNodeTest.o);
+        baseModel.add(node, SecuredRDFNodeTest.p2, "yeehaw");
+        baseModel.add(node, SecuredRDFNodeTest.p2, "yeehaw yall", "us");
+        baseModel.add(node, SecuredRDFNodeTest.p2, "whohoo", "uk");	    
+	}
 	@Before
 	public void setup() {
 		baseModel = createModel();
 		baseModel.removeAll();
-		baseModel.add(SecuredRDFNodeTest.s, SecuredRDFNodeTest.p, SecuredRDFNodeTest.o);
-		baseModel.add(SecuredRDFNodeTest.s, SecuredRDFNodeTest.p2, "yeehaw");
-		baseModel.add(SecuredRDFNodeTest.s, SecuredRDFNodeTest.p2, "yeehaw yall", "us");
-		baseModel.add(SecuredRDFNodeTest.s, SecuredRDFNodeTest.p2, "whohoo", "uk");
-
+		addSPO(SecuredRDFNodeTest.s);
 		securedModel = Factory.getInstance(securityEvaluator, "http://example.com/securedGraph", baseModel);
 		baseRDFNode = baseModel.getResource(SecuredRDFNodeTest.o.getURI());
 		securedRDFNode = SecuredRDFNodeImpl.getInstance(securedModel, baseRDFNode);

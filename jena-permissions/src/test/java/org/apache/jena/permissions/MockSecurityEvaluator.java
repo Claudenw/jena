@@ -123,6 +123,11 @@ public class MockSecurityEvaluator implements SecurityEvaluator
 		return true;
 	}
 
+	/**
+	 * Return true if all the permissions are present
+	 * @param action the set of actions to test
+	 * @return the result of the logical and of the permissions
+	 */
 	public boolean evaluate( final Set<Action> action )
 	{
 		boolean result = true;
