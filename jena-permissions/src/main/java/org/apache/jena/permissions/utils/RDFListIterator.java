@@ -23,16 +23,27 @@ import java.util.NoSuchElementException;
 import org.apache.jena.rdf.model.RDFList ;
 import org.apache.jena.vocabulary.RDF ;
 
+/**
+ * An iterator on the elements of an RDFList.
+ */
 public class RDFListIterator implements Iterator<RDFList>
 {
 	private RDFList current;
 	private Boolean found;
 
+	/**
+	 * Constructor.
+	 * @param start The RDFList element to start with.
+	 */
 	public RDFListIterator( final RDFList start )
 	{
 		this.current = start;
 	}
 
+	/**
+	 * Check if this is the end of the list.
+	 * @return true if this is the end of the list.
+	 */
 	private boolean endOfList()
 	{
 		return current.equals(RDF.nil);
@@ -48,6 +59,9 @@ public class RDFListIterator implements Iterator<RDFList>
 		return found == null ? false : found;
 	}
 
+	/** 
+	 * move to the next element in the list
+	 */
 	private void incrementCurrent()
 	{
 		if (!endOfList())

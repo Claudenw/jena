@@ -242,7 +242,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * Get an instance of SecuredModel
-     * 
+     *
      * @param securedItem the item providing the security context.
      * @param model       the Model to secure.
      * @return The SecuredModel
@@ -254,7 +254,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * Get an instance of SecuredModel
-     * 
+     *
      * @param securityEvaluator The security evaluator to use
      * @param modelIRI          The IRI (graph IRI) to name this model.
      * @param model             The Model to secure.
@@ -285,7 +285,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * Constructor.
-     * 
+     *
      * @param securityEvaluator The security evaluator to use
      * @param modelURI          The securedModel IRI to verify against.
      * @param holder            The item holder that will contain this SecuredModel.
@@ -300,10 +300,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * Create secured statement iterator from Supplier.
-     * 
+     *
      * if {@link SecurityEvaluator#isHardReadError()} is true and the user does not
      * have read access then an empty iterator will be returned.
-     * 
+     *
      * @param supplier the supplier for the ExtendedIterator of Statements.
      * @return the SecuredStatementIterator
      * @throws ReadDeniedException             if HardReadErrors is enabled and user
@@ -318,10 +318,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * Create secured resource iterator from Supplier.
-     * 
+     *
      * if {@link SecurityEvaluator#isHardReadError()} is true and the user does not
      * have read access then an empty iterator will be returned.
-     * 
+     *
      * @param supplier the supplier for the ExtendedIterator of Resources.
      * @return the SecuredResIterator
      * @throws ReadDeniedException             if HardReadErrors is enabled and user
@@ -689,10 +689,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * Determines if there is a first element in the supplied iterator after
      * filtering by ability to read.
-     * 
+     *
      * if {@link SecurityEvaluator#isHardReadError()} is true and the user does not
      * have read access then false will be returned.
-     * 
+     *
      * @param supplier The extended iterator supplier
      * @return true if there is an enclosed element.
      * @throws ReadDeniedException
@@ -714,10 +714,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, SecNode.ANY )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -731,10 +731,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, SecNode.ANY )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -748,10 +748,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, SecNode.ANY )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -765,10 +765,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, SecNode.ANY )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -782,10 +782,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, SecNode.ANY )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -819,10 +819,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read every statement in securedModel.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -842,10 +842,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read every statement in securedModel.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -865,10 +865,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read any statement in securedModel to be included in check, if no
      *             statement in securedModel can be read will return false;
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -906,10 +906,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, literal(o) )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -923,10 +923,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, literal(o) )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -940,10 +940,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, literal(o) )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -957,10 +957,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, literal(o) )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -974,10 +974,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, literal(o) )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -991,10 +991,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, literal(o) )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1008,10 +1008,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, literal(o) )
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1026,10 +1026,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read Triple( s, p, resource) where Triple(s,p,resource) is in the
      *             securedModel.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1628,10 +1628,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read for every triple contributed to the difference.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an model will be returned.
-     * 
+     *
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
      */
@@ -1664,11 +1664,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then original argument will be
      *            returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1706,7 +1706,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      *             reification did not exist
      * @sec.triple Create Triple( result, RDF.object, s.getObject() ) if reification
      *             did not exist
-     * 
+     *
      * @throws ReadDeniedException
      * @throws UpdateDeniedException
      * @throws AddDeniedException
@@ -1762,7 +1762,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     }
 
     /**
-     * 
+     *
      * @sec.graph Read
      * @sec.triple Read on Triple(resource, RDF.type, RDF.Seq)
      * @throws ReadDeniedException
@@ -1776,7 +1776,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     }
 
     /**
-     * 
+     *
      * @sec.graph Read
      * @sec.triple Read on Triple(uri, RDF.type, RDF.Seq)
      * @throws ReadDeniedException
@@ -1811,7 +1811,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * Return a RDF List based on a given resource.
-     * 
+     *
      * <p>
      * This method enables an application to treat any resource as a list. It is in
      * effect an unsafe downcast.
@@ -1846,10 +1846,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then an empty map will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1861,10 +1861,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then @{code null} will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1876,10 +1876,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then @{code null} will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1910,11 +1910,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on the returned statement.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then @{code null} will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1928,11 +1928,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on the returned statement.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then @{code null} will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -1982,7 +1982,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * . If the PropertyNotFoundException was thrown by the enclosed securedModel
      * and the user can not read Triple(s, p, SecNode.ANY) AccessDeniedException is
      * thrown, otherwise the PropertyNotFoundException will be thrown.
-     * 
+     *
      * @sec.graph Read
      * @sec.triple Read on the returned statement
      * @sec.triple Read on Triple(s, p, SecNode.ANY) if PropertyNotFoundException
@@ -2017,7 +2017,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * . If the PropertyNotFoundException was thrown by the enclosed securedModel
      * and the user can not read Triple(s, p, SecNode.ANY) AccessDeniedException is
      * thrown, otherwise the PropertyNotFoundException will be thrown.
-     * 
+     *
      * @sec.graph Read
      * @sec.triple Read on the returned statement
      * @sec.triple Read on Triple(s, p, SecNode.ANY) if PropertyNotFoundException
@@ -2075,14 +2075,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     }
 
     /**
-     * 
+     *
      * @sec.graph Read
      * @sec.triple Read on all triples contributed to the new securedModel.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty model will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2102,10 +2102,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then true will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2119,11 +2119,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read all compared triples. Triples that can not be read will not
      *             be compared.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then true will be returned if g is
      *             empty.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2140,14 +2140,14 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     }
 
     /**
-     * 
+     *
      * @sec.graph Read
      * @sec.triple Read on s as triple
      * @sec.triple Read on at least one set reified statements.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then false will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2168,11 +2168,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2186,11 +2186,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2204,11 +2204,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2222,11 +2222,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2240,11 +2240,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2258,11 +2258,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2275,11 +2275,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then an empty iterator will be
      *            returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2307,11 +2307,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on each RDFNode returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2324,11 +2324,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on each RDFNode returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2342,11 +2342,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on each RDFNode returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2365,11 +2365,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on each Reified statement returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2382,11 +2382,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on each Reified statement returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2401,11 +2401,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2420,11 +2420,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2440,11 +2440,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2460,11 +2460,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2480,11 +2480,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2500,11 +2500,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2520,11 +2520,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2540,11 +2540,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2558,11 +2558,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2575,11 +2575,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2593,11 +2593,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2611,11 +2611,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2629,11 +2629,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all triples returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2647,11 +2647,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read at least one Triple( s, p, o ) for each resource returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2665,11 +2665,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2684,11 +2684,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2703,11 +2703,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2723,11 +2723,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
      * @sec.graph Read
      * @sec.triple Read at least one Triple( resource, p, o ) for each resource
      *             returned
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty iterator will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2760,10 +2760,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then {@code null} will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2775,11 +2775,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then an empty model will be
      *            returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2892,13 +2892,13 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * Listener will be filtered to only report events that the user can see.
-     * 
+     *
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then listener will not be
      *            registered but no exception will be thrown
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -2984,7 +2984,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     }
 
     /**
-     * 
+     *
      * @sec.graph Update
      * @sec.triple Delete on statement.
      * @throws UpdateDeniedException
@@ -3002,7 +3002,7 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     }
 
     /**
-     * 
+     *
      * @sec.graph Update
      * @sec.triple Delete on every statement in statements.
      * @throws UpdateDeniedException
@@ -3186,11 +3186,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then @{code false} will be returned
      *            if the other has no prefix mappings.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3245,10 +3245,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then @{code uri} will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3260,10 +3260,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then @{code true} will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3275,10 +3275,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then 0 will be returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3290,12 +3290,12 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
 
     /**
      * @sec.graph Read
-     * 
-     * 
+     *
+     *
      *            if {@link SecurityEvaluator#isHardReadError()} is true and the
      *            user does not have read access then 0 will be returned.
-     * 
-     * 
+     *
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3324,11 +3324,11 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all statements contributed to the union.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then an empty model will be
      *             returned.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3384,10 +3384,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all statements that are written.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then no data will be written.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3408,10 +3408,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all statements that are written.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then no data will be written.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3432,10 +3432,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all statements that are written.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then no data will be written.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3457,10 +3457,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all statements that are written.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then no data will be written.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3480,10 +3480,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all statements that are written.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then no data will be written.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
@@ -3504,10 +3504,10 @@ public class SecuredModelImpl extends SecuredItemImpl implements SecuredModel {
     /**
      * @sec.graph Read
      * @sec.triple Read on all statements that are written.
-     * 
+     *
      *             if {@link SecurityEvaluator#isHardReadError()} is true and the
      *             user does not have read access then no data will be written.
-     * 
+     *
      * @throws ReadDeniedException
      * @throws AuthenticationRequiredException if user is not authenticated and is
      *                                         required to be.
