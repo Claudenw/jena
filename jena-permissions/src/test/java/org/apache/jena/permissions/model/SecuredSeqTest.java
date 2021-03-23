@@ -18,6 +18,7 @@
 package org.apache.jena.permissions.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -32,10 +33,10 @@ import org.apache.jena.permissions.model.impl.SecuredSeqImpl;
 import org.apache.jena.rdf.model.Alt;
 import org.apache.jena.rdf.model.Bag;
 import org.apache.jena.rdf.model.Literal;
-import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Seq;
+import org.apache.jena.rdf.model.SeqIndexBoundsException;
 import org.apache.jena.shared.AccessDeniedException;
 import org.apache.jena.shared.ReadDeniedException;
 import org.apache.jena.shared.UpdateDeniedException;
@@ -109,7 +110,7 @@ public class SecuredSeqTest extends SecuredContainerTest {
     @Test
     public void testAdd_idx_object() {
         final Object o = Integer.MAX_VALUE;
-        Literal l = ResourceFactory.createPlainLiteral( o.toString() );
+        Literal l = ResourceFactory.createTypedLiteral(o);
         testAdd_idx(() -> getSecuredSeq().add(1, o), l, () -> seq.getObject(1));
     }
 
@@ -143,6 +144,10 @@ public class SecuredSeqTest extends SecuredContainerTest {
         } catch (final ReadDeniedException e) {
             if (shouldRead()) {
                 Assert.fail("Should not have thrown ReadDeniedException Exception");
+            }
+        } catch (SeqIndexBoundsException e) {
+            if (!securityEvaluator.evaluate(Action.Read) && securityEvaluator.isHardReadError()) {
+                Assert.fail("Should not have thrown SeqIndexBoundsException Exception");
             }
         }
 
@@ -229,8 +234,9 @@ public class SecuredSeqTest extends SecuredContainerTest {
     @Test
     public void testGetObject() {
         final Object o = Integer.MAX_VALUE;
+        final Literal l = ResourceFactory.createTypedLiteral(o);
         seq.add(1, o);
-        testGet(() -> getSecuredSeq().getObject(1), o, null);
+        testGet(() -> getSecuredSeq().getObject(1), l, null);
     }
 
     @Test
@@ -245,202 +251,156 @@ public class SecuredSeqTest extends SecuredContainerTest {
 
     @Test
     public void testGetSeq() {
-        seq.add(1, 'c');
-        try {
-            getSecuredSeq().getSeq(1);
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
-
+        Seq seq2 = seq.getModel().createSeq();
+        seq.add(1, seq2);
+        testGet(() -> getSecuredSeq().getSeq(1), seq2, SecuredSeq.class);
     }
 
     @Test
     public void testGetShort() {
         seq.add(1, Short.MAX_VALUE);
-        try {
-            getSecuredSeq().getShort(1);
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
-
+        testGet(() -> getSecuredSeq().getShort(1), Short.MAX_VALUE, null);
     }
 
     @Test
     public void testGetString() {
         seq.add(1, "Waaa hoo");
+        testGet(() -> getSecuredSeq().getString(1), "Waaa hoo", null);
+    }
+
+    private void testIndex(Supplier<Integer> supplier, int expected) {
         try {
-            getSecuredSeq().getString(1);
-            if (!securityEvaluator.evaluate(Action.Read)) {
+            int actual = supplier.get();
+            if (!shouldRead()) {
                 Assert.fail("Should have thrown ReadDeniedException Exception");
             }
-        } catch (final ReadDeniedException e) {
             if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
+                assertEquals(expected, actual);
+            } else {
+                assertEquals(0, actual);
+            }
+        } catch (final ReadDeniedException e) {
+            if (shouldRead()) {
+                fail("Should not have thrown ReadDeniedException Exception");
             }
         }
 
     }
 
     @Test
-    public void testIndexOf() {
-        try {
-            getSecuredSeq().indexOf(true);
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
+    public void testIndexOf_boolean() {
+        seq.add(true);
+        seq.add(false);
+        testIndex(() -> getSecuredSeq().indexOf(true), 1);
+        testIndex(() -> getSecuredSeq().indexOf(false), 2);
+    }
 
-        try {
-            getSecuredSeq().indexOf('c');
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
+    @Test
+    public void testIndexOf_char() {
+        seq.add('c');
+        seq.add('d');
+        testIndex(() -> getSecuredSeq().indexOf('c'), 1);
+        testIndex(() -> getSecuredSeq().indexOf('d'), 2);
+    }
 
-        try {
-            getSecuredSeq().indexOf(3.14D);
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
+    @Test
+    public void testIndexOf_double() {
+        seq.add(3.14d);
+        seq.add(1.57d);
+        testIndex(() -> getSecuredSeq().indexOf(3.14d), 1);
+        testIndex(() -> getSecuredSeq().indexOf(1.57d), 2);
+    }
 
-        try {
-            getSecuredSeq().indexOf(3.14F);
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
+    @Test
+    public void testIndexOf_float() {
+        seq.add(3.14f);
+        seq.add(1.57f);
+        testIndex(() -> getSecuredSeq().indexOf(3.14f), 1);
+        testIndex(() -> getSecuredSeq().indexOf(1.57f), 2);
+    }
 
-        try {
-            getSecuredSeq().indexOf(3L);
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
+    @Test
+    public void testIndexOf_long() {
+        seq.add(3L);
+        seq.add(1L);
+        testIndex(() -> getSecuredSeq().indexOf(3L), 1);
+        testIndex(() -> getSecuredSeq().indexOf(1L), 2);
+    }
 
-        try {
-            final Object o = Integer.MAX_VALUE;
-            getSecuredSeq().indexOf(o);
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
+    @Test
+    public void testIndexOf_object() {
+        Object o1 = Integer.MAX_VALUE;
+        Object o2 = Long.MAX_VALUE;
+        seq.add(o1);
+        seq.add(o2);
+        testIndex(() -> getSecuredSeq().indexOf(o1), 1);
+        testIndex(() -> getSecuredSeq().indexOf(o2), 2);
+    }
 
-        try {
+    @Test
+    public void testIndexOf_resource() {
+        Resource r1 = ResourceFactory.createResource();
+        Resource r2 = ResourceFactory.createResource("http://example.com/2");
+        seq.add(r1);
+        seq.add(r2);
+        testIndex(() -> getSecuredSeq().indexOf(r1), 1);
+        testIndex(() -> getSecuredSeq().indexOf(r2), 2);
+    }
 
-            getSecuredSeq().indexOf(ResourceFactory.createResource("http://example.com/exampleResource"));
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
+    @Test
+    public void testIndexOf_string() {
+        String s1 = "waaa";
+        String s2 = "hoo";
+        seq.add(s1);
+        seq.add(s2);
+        testIndex(() -> getSecuredSeq().indexOf(s1), 1);
+        testIndex(() -> getSecuredSeq().indexOf(s2), 2);
+    }
 
-        try {
-            getSecuredSeq().indexOf("waaa hooo");
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
-
-        try {
-            getSecuredSeq().indexOf("dos", "es");
-            if (!securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail("Should have thrown ReadDeniedException Exception");
-            }
-        } catch (final ReadDeniedException e) {
-            if (securityEvaluator.evaluate(Action.Read)) {
-                Assert.fail(String.format("Should not have thrown ReadDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
-            }
-        }
-
+    @Test
+    public void testIndexOf_langString() {
+        Literal l1 = ResourceFactory.createLangLiteral("uno", "es");
+        Literal l2 = ResourceFactory.createLangLiteral("uno", "en");
+        seq.add(l1);
+        seq.add(l2);
+        testIndex(() -> getSecuredSeq().indexOf("uno", "es"), 1);
+        testIndex(() -> getSecuredSeq().indexOf("uno", "en"), 2);
     }
 
     @Override
     @Test
     public void testRemove() {
+        seq.add("The thing");
         final Set<Action> perms = SecurityEvaluator.Util.asSet(new Action[] { Action.Update, Action.Delete });
         try {
-            getSecuredSeq().remove(1);
+            SecuredSeq result = (SecuredSeq) getSecuredSeq().remove(1);
             if (!securityEvaluator.evaluate(perms)) {
                 Assert.fail("Should have thrown AccessDeniedException Exception");
             }
+            assertFalse(seq.contains("The thing"));
         } catch (final AccessDeniedException e) {
             if (securityEvaluator.evaluate(perms)) {
-                Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-                        e.getTriple()));
+                fail("Should not have thrown AccessDeniedException Exception");
             }
         }
     }
-    
-    private <T> void testSet_idx( Supplier<Seq> supplier, T expected, Supplier<T> test ) {
+
+    private <T> void testSet_idx(Supplier<Seq> supplier, T expected, Supplier<T> test) {
         final Set<Action> perms = SecurityEvaluator.Util.asSet(new Action[] { Action.Update });
         try {
-            seq.add( "A dummy entry");
+            seq.add("A dummy entry");
             SecuredSeq securedSeq = (SecuredSeq) supplier.get();
             if (!securityEvaluator.evaluate(perms)) {
                 Assert.fail("Should have thrown UpdateDeniedException Exception");
             }
-            assertNotNull( securedSeq );
-            assertEquals( expected, test.get() );
+            assertNotNull(securedSeq);
+            assertEquals(expected, test.get());
         } catch (final UpdateDeniedException e) {
             if (securityEvaluator.evaluate(perms)) {
                 fail("Should not have thrown UpdateDeniedException Exception");
             }
         }
-        
+
     }
 
     @Test
@@ -472,7 +432,8 @@ public class SecuredSeqTest extends SecuredContainerTest {
     @Test
     public void testSet_idx_object() {
         final Object o = Integer.MAX_VALUE;
-        testSet_idx(() -> getSecuredSeq().set(1, o), o, () -> seq.getObject(1));
+        Literal l = ResourceFactory.createTypedLiteral(o);
+        testSet_idx(() -> getSecuredSeq().set(1, o), l, () -> seq.getObject(1));
     }
 
     @Test
