@@ -83,6 +83,12 @@ public class SecuredReifiedStatementImpl extends SecuredResourceImpl implements
 		this.holder = holder;
 	}
 
+	/**
+     * @sec.graph Read
+     * @throws ReadDeniedException
+     * @throws AuthenticationRequiredException
+     *             if user is not authenticated and is required to be.
+     */
 	@Override
 	public SecuredStatement getStatement() throws ReadDeniedException,
 			AuthenticationRequiredException {

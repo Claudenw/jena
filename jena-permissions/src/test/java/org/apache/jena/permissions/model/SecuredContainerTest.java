@@ -30,7 +30,9 @@ import org.apache.jena.permissions.SecurityEvaluator.Action;
 import org.apache.jena.permissions.SecurityEvaluatorParameters;
 import org.apache.jena.permissions.model.impl.SecuredContainerImpl;
 import org.apache.jena.rdf.model.Container;
+import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
@@ -58,7 +60,7 @@ public class SecuredContainerTest extends SecuredResourceTest {
 	@Before
 	public void setup() {
 		super.setup();
-		Container baseContainer = baseModel.createBag(SecuredRDFNodeTest.s.getURI());
+		baseContainer = baseModel.createBag(SecuredRDFNodeTest.s.getURI());
 		setSecuredRDFNode(SecuredContainerImpl.getInstance(securedModel, baseContainer), baseContainer);
 	}
 
@@ -77,122 +79,77 @@ public class SecuredContainerTest extends SecuredResourceTest {
 		}
 	}
 
-	/**
-	 * @sec.graph Update
-	 * @sec.triple Create SecTriple( this, RDF.li, o );
-	 */
-	@Test
-	public void testAdd() {
-		final Set<Action> perms = SecurityEvaluator.Util.asSet(new Action[] { Action.Update, Action.Create });
-		try {
-			getSecuredContainer().add(true);
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException: %s - %s", e, e.getTriple()));
-			}
-		}
-
-		try {
-			getSecuredContainer().add('c');
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		try {
-			getSecuredContainer().add(3.14D);
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		try {
-			getSecuredContainer().add(3.14F);
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		try {
-			getSecuredContainer().add(2L);
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		final Object o = Integer.valueOf("1234");
-		try {
-			getSecuredContainer().add(o);
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		try {
-			getSecuredContainer().add(ResourceFactory.createResource("http://example.com/testResource"));
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		try {
-			getSecuredContainer().add("foo");
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
-		try {
-			getSecuredContainer().add("dos", "esp");
-			if (!securityEvaluator.evaluate(perms)) {
-				Assert.fail("Should have thrown AccessDeniedException Exception");
-			}
-		} catch (final AccessDeniedException e) {
-			if (securityEvaluator.evaluate(perms)) {
-				Assert.fail(String.format("Should not have thrown AccessDeniedException Exception: %s - %s", e,
-						e.getTriple()));
-			}
-		}
-
+	private <T> void testAdd( Supplier<Container> supplier, T expected )
+	{
+	    final Set<Action> perms = SecurityEvaluator.Util.asSet(new Action[] { Action.Update, Action.Create });
+        try {
+            SecuredContainer securedContainer = (SecuredContainer) supplier.get();
+            if (!securityEvaluator.evaluate(perms)) {
+                Assert.fail("Should have thrown AccessDeniedException");
+            }
+            baseContainer.getModel().write( System.out, "TURTLE" );
+            Container container = (Container) securedContainer.getBaseItem();
+            if (expected instanceof RDFNode) {
+                assertTrue( container.contains( (RDFNode) expected ));
+            } else {
+                assertTrue( container.contains( expected ));
+            }
+        } catch (final AccessDeniedException e) {
+            if (securityEvaluator.evaluate(perms)) {
+                Assert.fail(String.format("Should not have thrown AccessDeniedException: %s - %s", e, e.getTriple()));
+            }
+        }
 	}
+
+	@Test
+	public void testAdd_boolean() {
+		testAdd( ()->getSecuredContainer().add(true), true );
+	}
+
+	   @Test
+	    public void testAdd_char() {
+	        testAdd( ()->getSecuredContainer().add('c'), 'c' );
+	    }
+	   
+       @Test
+       public void testAdd_double() {
+           testAdd( ()->getSecuredContainer().add(3.14d), 3.14D );
+       }
+
+       @Test
+       public void testAdd_float() {
+           testAdd( ()->getSecuredContainer().add(3.14f), 3.14f );
+       }
+
+
+       @Test
+       public void testAdd_long() {
+           testAdd( ()->getSecuredContainer().add(2l), 2L );
+       }
+
+       @Test
+       public void testAdd_Object() {
+           final Object o = Integer.valueOf("1234");
+           testAdd( ()->getSecuredContainer().add(o), o );
+       }
+
+       @Test
+       public void testAdd_Resource() {
+           final Resource r = ResourceFactory.createResource("http://example.com/testResource");
+           testAdd( ()->getSecuredContainer().add(r), r );
+       }
+       
+       @Test
+       public void testAdd_String() {
+           testAdd( ()->getSecuredContainer().add("foo"), "foo" );
+       }
+
+       @Test
+       public void testAdd_LangString() {
+           Literal l = ResourceFactory.createLangLiteral("dos", "es");
+           testAdd( ()->getSecuredContainer().add("dos", "es"), l );
+       }
+	
 	
 	private void testContains( Supplier<Boolean> supplier, boolean expected)
 	{
