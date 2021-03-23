@@ -113,7 +113,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
      * @return an RDFNode
      */
     protected RDFNode asObject(Object o) {
-        return o instanceof RDFNode ? (RDFNode) o : ResourceFactory.createTypedLiteral(o);
+        return o instanceof RDFNode ? (RDFNode) o : holder.getBaseItem().getModel().createTypedLiteral(o);
     }
 
     /**
@@ -138,7 +138,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
     @Override
     public SecuredContainer add(final boolean o)
             throws AddDeniedException, UpdateDeniedException, AuthenticationRequiredException {
-        return add(String.valueOf(o));
+        return add(asObject(o));
     }
 
     /**
@@ -152,7 +152,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
     @Override
     public SecuredContainer add(final char o)
             throws AddDeniedException, UpdateDeniedException, AuthenticationRequiredException {
-        return add(String.valueOf(o));
+        return add(asObject(o));
     }
 
     /**
@@ -166,7 +166,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
     @Override
     public SecuredContainer add(final double o)
             throws AddDeniedException, UpdateDeniedException, AuthenticationRequiredException {
-        return add(String.valueOf(o));
+        return add(asObject(o));
     }
 
     /**
@@ -180,7 +180,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
     @Override
     public SecuredContainer add(final float o)
             throws AddDeniedException, UpdateDeniedException, AuthenticationRequiredException {
-        return add(String.valueOf(o));
+        return add(asObject(o));
     }
 
     /**
@@ -194,7 +194,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
     @Override
     public SecuredContainer add(final long o)
             throws AddDeniedException, UpdateDeniedException, AuthenticationRequiredException {
-        return add(String.valueOf(o));
+        return add(asObject(o));
     }
 
     /**
@@ -208,7 +208,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
     @Override
     public SecuredContainer add(final Object o)
             throws AddDeniedException, UpdateDeniedException, AuthenticationRequiredException {
-        return add(String.valueOf(o));
+        return add(asObject(o));
     }
 
     /**
@@ -288,7 +288,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
      */
     @Override
     public boolean contains(final boolean o) throws ReadDeniedException, AuthenticationRequiredException {
-        return contains(String.valueOf(o));
+        return contains(asObject(o));
     }
 
     /**
@@ -304,7 +304,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
      */
     @Override
     public boolean contains(final char o) throws ReadDeniedException, AuthenticationRequiredException {
-        return contains(String.valueOf(o));
+        return contains(asObject(o));
     }
 
     /**
@@ -320,7 +320,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
      */
     @Override
     public boolean contains(final double o) throws ReadDeniedException, AuthenticationRequiredException {
-        return contains(String.valueOf(o));
+        return contains(asObject(o));
     }
 
     /**
@@ -336,7 +336,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
      */
     @Override
     public boolean contains(final float o) throws ReadDeniedException, AuthenticationRequiredException {
-        return contains(String.valueOf(o));
+        return contains(asObject(o));
     }
 
     /**
@@ -352,7 +352,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
      */
     @Override
     public boolean contains(final long o) throws ReadDeniedException, AuthenticationRequiredException {
-        return contains(String.valueOf(o));
+        return contains(asObject(o));
     }
 
     /**
@@ -368,7 +368,7 @@ public class SecuredContainerImpl extends SecuredResourceImpl implements Secured
      */
     @Override
     public boolean contains(final Object o) throws ReadDeniedException, AuthenticationRequiredException {
-        return contains(String.valueOf(o));
+        return contains(asObject(o));
     }
 
     /**

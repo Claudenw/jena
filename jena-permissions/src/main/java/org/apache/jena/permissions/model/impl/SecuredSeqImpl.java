@@ -132,7 +132,7 @@ public class SecuredSeqImpl extends SecuredContainerImpl implements SecuredSeq {
      */
     @Override
     public Seq add(int index, boolean o)  {
-        return add( index, String.valueOf( o ) );
+        return add( index, asObject( o ) );
     }
     
     /**
@@ -145,7 +145,7 @@ public class SecuredSeqImpl extends SecuredContainerImpl implements SecuredSeq {
      */
     @Override
     public Seq add(int index, long o)  {
-        return add( index, String.valueOf( o ) );
+        return add( index, asObject( o ) );
     }
     
     /**
@@ -158,7 +158,7 @@ public class SecuredSeqImpl extends SecuredContainerImpl implements SecuredSeq {
      */
     @Override
     public Seq add(int index, char o)  {
-        return add( index, String.valueOf( o ) );
+        return add( index, asObject( o ) );
     }
     
     /**
@@ -171,7 +171,7 @@ public class SecuredSeqImpl extends SecuredContainerImpl implements SecuredSeq {
      */
     @Override
     public Seq add(int index, float o)  {
-        return add( index, String.valueOf( o ) );
+        return add( index, asObject( o ) );
     }
     
     /**
@@ -184,7 +184,7 @@ public class SecuredSeqImpl extends SecuredContainerImpl implements SecuredSeq {
      */
     @Override
     public Seq add(int index, double o)  {
-        return add( index, String.valueOf( o ) );
+        return add( index, asObject( o ) );
     }
     
     /**
@@ -197,7 +197,7 @@ public class SecuredSeqImpl extends SecuredContainerImpl implements SecuredSeq {
      */
     @Override
     public Seq add(int index, Object o)  {
-        return add( index, String.valueOf( o ) );
+        return add( index, asObject( o ) );
     }
     
     /**
