@@ -32,10 +32,18 @@ import org.apache.jena.util.iterator.ExtendedIterator ;
 public class SecuredResIterator implements ResIterator
 {
 
+    /**
+     * Maps a Resource to a secured resource
+     *
+     */
 	private class PermResourceMap implements Function<Resource, Resource>
 	{
 		private final SecuredModel securedModel;
 
+		/**
+		 * Constructor.
+		 * @param securedModel the secured model in which the resources will be created.
+		 */
 		public PermResourceMap( final SecuredModel securedModel )
 		{
 			this.securedModel = securedModel;
@@ -50,6 +58,11 @@ public class SecuredResIterator implements ResIterator
 
 	private final ExtendedIterator<Resource> iter;
 	
+	/**
+	 * Constructor.
+	 * @param securedModel The model in which resources will be constructed
+	 * @param wrapped the Resource iterator.
+	 */
 	public SecuredResIterator( final SecuredModel securedModel,
 			final ExtendedIterator<Resource> wrapped)
 	{
