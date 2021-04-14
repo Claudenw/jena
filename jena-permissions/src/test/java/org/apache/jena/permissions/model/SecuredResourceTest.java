@@ -324,8 +324,7 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 
 	@Test
 	public void testGetProperty() {
-	    
-        try {
+	    try {
             Statement actual = getSecuredResource().getProperty(SecuredRDFNodeTest.p);
             if (!shouldRead()) {
                 Assert.fail("Should have thrown ReadDeniedException Exception");
@@ -340,8 +339,10 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
                 Assert.fail("Should not have thrown ReadDeniedException Exception");
             }
         }
-
-
+	}
+	
+    @Test
+    public void testGetPropertyResourceValue() {
 		try {
 			Resource actual = getSecuredResource().getPropertyResourceValue(SecuredRDFNodeTest.p);
 			if (!shouldRead()) {
@@ -602,8 +603,10 @@ public class SecuredResourceTest extends SecuredRDFNodeTest {
 			if (securityEvaluator.evaluate(Action.Read))
 			{
 				assertEquals( expected, iter.hasNext());
-				Statement stmt = iter.next();
-				assertEquals(txt, stmt.getObject().asLiteral().getString());
+				if (expected) {
+				    Statement stmt = iter.next();
+				    assertEquals(txt, stmt.getObject().asLiteral().getString());
+				}
 			} else {
 				assertFalse( iter.hasNext() );
 			}

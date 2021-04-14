@@ -40,11 +40,6 @@ public class SecuredReifiedStatementTest extends SecuredResourceTest {
 	}
 
 	@Override
-	protected boolean hasP() {
-		return false;
-	}
-
-	@Override
 	protected boolean hasP2() {
 		return false;
 	}
@@ -53,8 +48,9 @@ public class SecuredReifiedStatementTest extends SecuredResourceTest {
 	@Before
 	public void setup() {
 		super.setup();
-		final ReifiedStatement stmt = baseModel.listStatements().next().createReifiedStatement();
+		ReifiedStatement stmt = baseModel.listStatements(s, p, o).next().createReifiedStatement();
 		setSecuredRDFNode(SecuredReifiedStatementImpl.getInstance(securedModel, stmt), stmt);
+		stmt.addProperty( p, o);
 	}
 
 	@Test
