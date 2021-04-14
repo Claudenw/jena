@@ -87,7 +87,6 @@ public class SecuredContainerTest extends SecuredResourceTest {
             if (!securityEvaluator.evaluate(perms)) {
                 Assert.fail("Should have thrown AccessDeniedException");
             }
-            baseContainer.getModel().write( System.out, "TURTLE" );
             Container container = (Container) securedContainer.getBaseItem();
             if (expected instanceof RDFNode) {
                 assertTrue( container.contains( (RDFNode) expected ));
