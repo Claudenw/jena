@@ -214,10 +214,9 @@ public class OpRewriter implements OpVisitor {
 		if (!securityEvaluator.evaluate(principal, Action.Read, graphIRI)) {
 			if (silentFail) {
 				return;
-			} else {
-				throw new ReadDeniedException(
-						SecuredItem.Util.modelPermissionMsg(graphIRI));
 			}
+			throw new ReadDeniedException(
+						SecuredItem.Util.modelPermissionMsg(graphIRI));
 		}
 
 		// if the user can read any triple just add the opBGP
