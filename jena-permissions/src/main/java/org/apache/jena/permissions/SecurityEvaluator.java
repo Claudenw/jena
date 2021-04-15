@@ -380,6 +380,6 @@ public interface SecurityEvaluator {
      * @return true if reads blocked by permissions should throw an exception.
      */
     public default boolean isHardReadError() {
-        return true;
+        return false;
     }
 }
