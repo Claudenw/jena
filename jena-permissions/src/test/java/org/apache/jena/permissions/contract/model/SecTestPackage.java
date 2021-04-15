@@ -17,6 +17,21 @@
  */
 package org.apache.jena.permissions.contract.model;
 
+import org.apache.jena.atlas.web.TypedInputStream;
+import org.apache.jena.graph.Graph;
+import org.apache.jena.irix.IRIs;
+import org.apache.jena.permissions.MockSecurityEvaluator;
+import org.apache.jena.permissions.SecurityEvaluator;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.test.AbstractTestPackage;
+import org.apache.jena.rdf.model.test.helpers.TestingModelFactory;
+import org.apache.jena.riot.system.stream.Locator;
+import org.apache.jena.riot.system.stream.LocatorZip;
+import org.apache.jena.riot.system.stream.StreamManager;
+import org.apache.jena.shared.PrefixMapping;
+
+import junit.framework.TestSuite;
 
 /**
  * Test package to test Model implementation.
@@ -62,7 +77,7 @@ public class SecTestPackage extends AbstractTestPackage {
 
         @Override
         public TypedInputStream open(String uri) {
-            String uriSchemeName = FileUtils.getScheme(uri);
+            String uriSchemeName = IRIs.scheme(uri);
             if (!"jar".equalsIgnoreCase(uriSchemeName)) {
                 return null;
             }

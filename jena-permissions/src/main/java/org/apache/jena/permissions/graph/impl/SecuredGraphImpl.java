@@ -22,7 +22,6 @@ import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.TransactionHandler;
 import org.apache.jena.graph.Triple;
-import org.apache.jena.permissions.SecuredItem;
 import org.apache.jena.permissions.SecurityEvaluator;
 import org.apache.jena.permissions.SecurityEvaluator.Action;
 import org.apache.jena.permissions.graph.SecuredCapabilities;
@@ -59,11 +58,13 @@ public class SecuredGraphImpl extends SecuredItemImpl implements SecuredGraph {
      * @param graphIRI          The IRI for the graph
      * @param holder            The item holder that will contain this SecuredGraph.
      */
-    SecuredGraphImpl(final SecuredItem securedItem, final ItemHolder<Graph, SecuredGraphImpl> holder) {
-        super(securedItem, holder);
+    SecuredGraphImpl(final SecurityEvaluator securityEvaluator,
+            final String modelURI,
+            final ItemHolder<Graph, SecuredGraphImpl> holder) {
+        super(securityEvaluator, modelURI, holder);
         this.holder = holder;
-        this.eventManager = new SecuredGraphEventManager(this, holder.getBaseItem(),
-                holder.getBaseItem().getEventManager());
+        this.eventManager = new SecuredGraphEventManager(this,
+                holder.getBaseItem(), holder.getBaseItem().getEventManager());
     }
 
     /**
