@@ -76,7 +76,7 @@
     <ver.httpclient>4.5.13</ver.httpclient>
     <ver.httpcore>4.4.14</ver.httpcore>
 
-    <ver.shaded-guava>31.0.1-jre</ver.shaded-guava>
+    <ver.shaded-guava>31.1-jre</ver.shaded-guava>
     <ver.commonsio>2.11.0</ver.commonsio>
     <ver.commonscli>1.5.0</ver.commonscli>
     <ver.commonslang3>3.12.0</ver.commonslang3>
