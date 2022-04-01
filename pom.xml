@@ -88,7 +88,7 @@
     <ver.micrometer>1.8.1</ver.micrometer>
 
     <ver.lucene>8.10.1</ver.lucene>
-    <ver.graalvm>21.3.0</ver.graalvm>
+    <ver.graalvm>22.0.0.2</ver.graalvm>
     <ver.jython>2.7.2</ver.jython>
     <ver.jcommander>1.81</ver.jcommander>
     <ver.mockito>4.0.0</ver.mockito>
