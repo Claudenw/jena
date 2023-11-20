@@ -172,6 +172,26 @@ public class Converters {
     }
 
     /**
+     * Makes a node from an object while using Extended PrefixMapping.
+     * <ul>
+     * <li>Will return Node.ANY if object is null.</li>
+     * <li>Will return the enclosed Node from a FrontsNode</li>
+     * <li>Will return the object if it is a Node.</li>
+     * <li>Will call NodeFactoryExtra.parseNode() using the currently defined
+     * prefixes if the object is a String</li>
+     * <li>Will call makeLiteral() to create a literal representation if the
+     * parseNode() fails or for any other object type.</li>
+     * </ul>
+     *
+     * @param o The object to convert (may be null).
+     * @return The Node value.
+     * @see #makeLiteral(Object)
+     */
+    public static Node makeNode(Object o) {
+        return makeNode(o, PrefixMapping.Extended);
+    }
+    
+    /**
      * Creates a Path or Node as appropriate.
      * <ul>
      * <li>Will return Node.ANY if object is null.</li>
@@ -221,6 +241,60 @@ public class Converters {
         }
         return makeNode(o, pMapping);
     }
+    
+    /**
+     * Creates a Path or Node as appropriate using the Extended Prefix mapping.
+     * <ul>
+     * <li>Will return Node.ANY if object is null.</li>
+     * <li>Will return the object if it is a Path
+     * <li>Will return the enclosed Node from a FrontsNode</li>
+     * <li>Will return the object if it is a Node.</li>
+     * <li>Will call PathParser.parse() using the prefix mapping if the object is a
+     * String</li>
+     * <li>Will call NodeFactoryExtra.parseNode() using the currently defined
+     * prefixes if the object is a String and the PathParser.parse() fails.</li>
+     * <li>Will call makeLiteral() to create a literal representation if the
+     * parseNode() fails or for any other object type.</li>
+     * </ul>
+     *
+     * @param o the object that should be interpreted as a path or a node.
+     * @return the Path or Node
+     * @see #makeLiteral(Object)
+     */
+    public static Object makeNodeOrPath(Object o) {
+        return makeNodeOrPath(o, PrefixMapping.Extended);
+    }
+    
+    /**
+     * Makes a predicate path from an Object.  Will use makeNodeOrPath to convert parameters that are not already
+     * a Path, a Node, or a FrontsNode object.
+     * @param o the object to convert to a Path.
+     * @param pMapping the Prefix Mapping to use to resolve node names.
+     * @return A path based on the object.
+     */
+    public Path makePath(Object o, PrefixMapping pMapping) {
+        if (o instanceof Path) {
+            return (Path)o;
+        }
+        if (o instanceof Node) {
+            return new P_Link((Node) o);
+        }
+        if (o instanceof FrontsNode) {
+            return new P_Link(((FrontsNode)o).asNode());
+        }
+        return makePath(Converters.makeNodeOrPath(o, pMapping), pMapping);
+    }
+    
+    /**
+     * Makes a predicate path from an Object using the Extended prefix mapping.
+     * a Path, a Node, or a FrontsNode object.
+     * @param o the object to convert to a Path.
+     * @return A path based on the object.
+     */
+    public Path makePath(Object o) {
+        return makePath(o, PrefixMapping.Extended);
+    }
+
 
     /**
      * Makes a Var from an object.
